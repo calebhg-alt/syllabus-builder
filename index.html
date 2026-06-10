@@ -956,6 +956,8 @@ html.light .instructor-info strong{color:var(--text)}
 </div><!-- /shell -->
 
 <!-- ══════════════════════════════════════════════════════════════ SCRIPT -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 // ─── DATA ─────────────────────────────────────────────────────────────────
 
@@ -2253,36 +2255,64 @@ function applyStoredTheme() {
 }
 
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────
-const STORAGE_KEY = 'avc_syllabus_builder_v1';
+// ─── FIREBASE SETUP ───────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBo3VWrwWpt5JzDBgT2WR3CdXyDLkBqp88",
+  authDomain: "avc-syllabus-builder.firebaseapp.com",
+  databaseURL: "https://avc-syllabus-builder-default-rtdb.firebaseio.com",
+  projectId: "avc-syllabus-builder",
+  storageBucket: "avc-syllabus-builder.firebasestorage.app",
+  messagingSenderId: "418782997426",
+  appId: "1:418782997426:web:62fd44ada2351f7dfad2ab"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-function getDeptStorageKey() {
-  return activeDept ? activeDept.storageKey : STORAGE_KEY;
+// ─── PERSISTENCE — Firebase Realtime Database ─────────────────────────────
+let _saveTimer = null;
+let _isSaving = false;
+
+function setFooter(msg, tempMs) {
+  const el = document.getElementById('footer-status');
+  if(!el) return;
+  el.textContent = msg;
+  if(tempMs) setTimeout(() => el.textContent = 'All changes auto-saved', tempMs);
+}
+
+function getFormFields() {
+  const fields = {};
+  ['i_name','i_email','i_phone','i_office','i_hours','i_semester',
+   'g_hw','g_proj','g_exam','g_part','g_A','g_B','g_C','g_D','g_F','g_missed'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) fields[id] = el.value;
+  });
+  return fields;
 }
 
 function saveAll() {
-  if(!activeDept) return;
-  try {
-    const formFields = {};
-    ['i_name','i_email','i_phone','i_office','i_hours','i_semester',
-     'g_hw','g_proj','g_exam','g_part','g_A','g_B','g_C','g_D','g_F','g_missed'
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) formFields[id] = el.value;
-    });
-    const payload = {
-      courses: COURSES, tools: TOOLS, policies: POLICIES,
-      instructors: INSTRUCTORS, activeInstructorId,
-      formFields, savedAt: new Date().toISOString()
-    };
-    localStorage.setItem(getDeptStorageKey(), JSON.stringify(payload));
-  } catch(e) { console.warn('Save failed:', e); }
+  if(!activeDept || _isSaving) return;
+  _isSaving = true;
+  setFooter('Saving…');
+  const payload = {
+    courses: COURSES,
+    tools: TOOLS,
+    policies: POLICIES,
+    instructors: INSTRUCTORS || [],
+    activeInstructorId: activeInstructorId || null,
+    formFields: getFormFields(),
+    savedAt: new Date().toISOString()
+  };
+  db.ref(activeDept.id).set(payload)
+    .then(() => { setFooter('All changes auto-saved'); _isSaving = false; })
+    .catch(e => { console.warn('Firebase save failed:', e); setFooter('⚠ Save failed — check connection'); _isSaving = false; });
 }
 
 function loadDeptData(dept) {
-  try {
-    const raw = localStorage.getItem(dept.storageKey);
-    if(raw) {
-      const payload = JSON.parse(raw);
+  // Returns a Promise that resolves with savedAt string or false
+  return db.ref(dept.id).once('value').then(snapshot => {
+    const payload = snapshot.val();
+    if(payload) {
       if(payload.courses  && Array.isArray(payload.courses))  COURSES  = payload.courses;
       if(payload.tools    && Array.isArray(payload.tools))    TOOLS    = payload.tools;
       if(payload.policies && Array.isArray(payload.policies)) POLICIES = payload.policies;
@@ -2290,23 +2320,25 @@ function loadDeptData(dept) {
       if(payload.activeInstructorId) activeInstructorId = payload.activeInstructorId;
       if(payload.formFields) window._pendingFormFields = payload.formFields;
       return payload.savedAt || true;
+    } else {
+      // No data in Firebase yet — load built-in defaults
+      if(dept.id === 'welding') {
+        INSTRUCTORS = JSON.parse(JSON.stringify(DEFAULT_INSTRUCTORS.welding));
+      } else if(DEPT_DEFAULTS[dept.id]) {
+        const d = DEPT_DEFAULTS[dept.id];
+        COURSES     = JSON.parse(JSON.stringify(d.courses));
+        TOOLS       = JSON.parse(JSON.stringify(d.tools));
+        POLICIES    = JSON.parse(JSON.stringify(d.policies));
+        INSTRUCTORS = JSON.parse(JSON.stringify(DEFAULT_INSTRUCTORS[dept.id] || []));
+      }
+      return false;
     }
-  } catch(e) { console.warn('Load failed:', e); }
-  // No saved data — load defaults
-  if(dept.id === 'welding') {
-    // COURSES/TOOLS/POLICIES already set from inline defaults
-    INSTRUCTORS = JSON.parse(JSON.stringify(DEFAULT_INSTRUCTORS.welding));
-  } else if(DEPT_DEFAULTS[dept.id]) {
-    const d = DEPT_DEFAULTS[dept.id];
-    COURSES  = JSON.parse(JSON.stringify(d.courses));
-    TOOLS    = JSON.parse(JSON.stringify(d.tools));
-    POLICIES = JSON.parse(JSON.stringify(d.policies));
-    INSTRUCTORS = JSON.parse(JSON.stringify(DEFAULT_INSTRUCTORS[dept.id] || []));
-  }
-  return false;
+  }).catch(e => {
+    console.warn('Firebase load failed:', e);
+    setFooter('⚠ Could not load — check connection');
+    return false;
+  });
 }
-
-function loadAll() { return false; } // legacy stub — not used directly anymore
 
 function restoreFormFields() {
   const fields = window._pendingFormFields;
@@ -2318,30 +2350,29 @@ function restoreFormFields() {
   window._pendingFormFields = null;
 }
 
-function clearSave() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
-}
-
 function confirmClearSave() {
-  if(!confirm('Clear saved data for this department and reset to defaults? This cannot be undone.')) return;
-  if(activeDept) try { localStorage.removeItem(activeDept.storageKey); } catch(e){}
-  location.reload();
+  if(!confirm('Reset this department to defaults? This clears all data from the shared database and cannot be undone.')) return;
+  if(!activeDept) return;
+  db.ref(activeDept.id).remove()
+    .then(() => location.reload())
+    .catch(e => alert('Error clearing data: ' + e.message));
 }
 
-// Auto-save: debounced 800ms after any input/change anywhere
-let _saveTimer = null;
+// Auto-save: debounced 1200ms after any input/change
 function scheduleSave() {
   clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(saveAll, 800);
+  _saveTimer = setTimeout(saveAll, 1200);
 }
 document.addEventListener('input',  scheduleSave);
 document.addEventListener('change', scheduleSave);
 
-// Also save on page unload/hide
+// Save on page hide/unload
 window.addEventListener('beforeunload', saveAll);
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'hidden') saveAll();
 });
+
+// localStorage kept only for theme preference
 
 // ─── LOCK SCREEN & DEPARTMENT SYSTEM ─────────────────────────────────────
 function selectDept(deptId) {
@@ -2379,7 +2410,7 @@ function submitPin() {
   }
 }
 
-function unlockDept(dept) {
+async function unlockDept(dept) {
   activeDept = dept;
   // Update sidebar branding
   const lbl = document.getElementById('sidebar-dept-label');
@@ -2389,8 +2420,11 @@ function unlockDept(dept) {
   const switchLbl = document.getElementById('dept-switch-label');
   if(switchLbl) switchLbl.textContent = dept.name + ' — Switch';
   document.title = 'AVC ' + dept.name + ' Syllabus Builder';
-  // Load data
-  const savedAt = loadDeptData(dept);
+  // Show loading state on lock screen while Firebase loads
+  const lockErr = document.getElementById('lock-error');
+  if(lockErr) lockErr.textContent = 'Loading data…';
+  // Load from Firebase (async)
+  const savedAt = await loadDeptData(dept);
   // Hide lock screen
   const ls = document.getElementById('lock-screen');
   if(ls) { ls.style.opacity='0'; ls.style.transition='opacity .3s'; setTimeout(()=>ls.style.display='none',300); }
@@ -2409,18 +2443,17 @@ function unlockDept(dept) {
     activeInstructorId = INSTRUCTORS[0].id;
   }
   renderInstructorRoster();
-  // Restore notice
-  const footer = document.getElementById('footer-status');
+  // Status
   if(savedAt) {
     const when = typeof savedAt==='string' ? new Date(savedAt).toLocaleString() : 'previous session';
-    if(footer) { footer.textContent='Restored: '+when; setTimeout(()=>footer.textContent='All changes auto-saved',4000); }
+    setFooter('Restored: ' + when, 4000);
   } else {
-    if(footer) footer.textContent = 'All changes auto-saved';
+    setFooter('Loaded defaults — changes will sync to all devices');
   }
 }
 
 function logOut() {
-  saveAll();
+  if(activeDept) saveAll();
   activeDept = null;
   selectedDeptId = null;
   activeInstructorId = null;
@@ -2437,8 +2470,8 @@ function logOut() {
 }
 
 function showLockScreen() {
-  if(!confirm('Switch department? Unsaved changes are stored automatically.')) return;
-  saveAll();
+  if(!confirm('Switch department? Your changes will be saved.')) return;
+  if(activeDept) saveAll();
   activeDept = null;
   selectedDeptId = null;
   const ls = document.getElementById('lock-screen');
