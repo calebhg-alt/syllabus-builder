@@ -397,14 +397,23 @@ select option{background:var(--bg3)}
 /* ── policy editor ──────────────────────────────────────────────────────── */
 .policy-editor-row{
   background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
-  margin-bottom:8px;overflow:hidden;
+  margin-bottom:8px;overflow:hidden;transition:opacity .15s,box-shadow .15s;
+  cursor:default;
 }
+.policy-editor-row.dragging{opacity:.45;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.policy-editor-row.drag-over{border-color:var(--burg);box-shadow:0 0 0 2px rgba(139,28,64,0.35)}
 .policy-editor-header{
   display:flex;align-items:center;gap:8px;padding:8px 12px;
   border-bottom:1px solid var(--border);
 }
 .policy-editor-header input{flex:1;font-weight:600;color:#fff;background:transparent;border:none;font-size:13px;padding:0}
 .policy-editor-header input:focus{outline:none;background:var(--yellow);border-radius:3px;padding:2px 4px}
+.drag-handle{
+  cursor:grab;color:var(--text3);font-size:14px;padding:0 2px;
+  user-select:none;flex-shrink:0;line-height:1;
+}
+.drag-handle:active{cursor:grabbing}
+.drag-handle:hover{color:var(--text)}
 .policy-editor-body{padding:10px 12px}
 .policy-editor-body textarea{background:var(--bg4);min-height:60px;font-size:12px}
 .policy-locked{opacity:.55;pointer-events:none}
@@ -1590,8 +1599,14 @@ function deletePolicy(i) {
 function renderPolicies() {
   if(policiesUnlocked) {
     document.getElementById('policy-display').innerHTML = POLICIES.map(([t,txt],i)=>`
-      <div class="policy-editor-row">
+      <div class="policy-editor-row" draggable="true" data-index="${i}"
+           ondragstart="policyDragStart(event,${i})"
+           ondragover="policyDragOver(event)"
+           ondragleave="policyDragLeave(event)"
+           ondrop="policyDrop(event,${i})"
+           ondragend="policyDragEnd(event)">
         <div class="policy-editor-header">
+          <span class="drag-handle" title="Drag to reorder">⠿</span>
           <input type="text" value="${t.replace(/"/g,'&quot;')}" oninput="POLICIES[${i}][0]=this.value" placeholder="Policy title">
           <button class="btn-icon danger" onclick="deletePolicy(${i})" title="Delete policy">×</button>
         </div>
@@ -1608,6 +1623,46 @@ function renderPolicies() {
       </div>
     `).join('');
   }
+}
+
+// ─── POLICY DRAG-AND-DROP ─────────────────────────────────────────────────
+let _dragSrcIndex = null;
+
+function policyDragStart(e, i) {
+  _dragSrcIndex = i;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', i);
+  // slight delay so the element renders as dragging after pickup
+  requestAnimationFrame(() => e.currentTarget.classList.add('dragging'));
+}
+
+function policyDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+
+function policyDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function policyDrop(e, targetIndex) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(_dragSrcIndex === null || _dragSrcIndex === targetIndex) return;
+  // Reorder POLICIES array
+  const moved = POLICIES.splice(_dragSrcIndex, 1)[0];
+  POLICIES.splice(targetIndex, 0, moved);
+  _dragSrcIndex = null;
+  renderPolicies();
+  scheduleSave();
+}
+
+function policyDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  _dragSrcIndex = null;
+  // Clean up any leftover drag-over states
+  document.querySelectorAll('.policy-editor-row').forEach(r => r.classList.remove('drag-over','dragging'));
 }
 
 // ─── TOOL LIST CRUD ──────────────────────────────────────────────────────
