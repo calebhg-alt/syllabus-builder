@@ -527,6 +527,20 @@ html.light .lock-card h1{color:var(--text)}
 }
 .dept-switcher:hover{color:var(--text)}
 
+/* ── COR unlock bar (reuses unlock-bar style, just needs indicator) ──────── */
+.cor-lock-bar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:rgba(139,28,64,0.08);border:1px solid var(--border);
+  border-radius:var(--radius);padding:8px 12px;margin-bottom:14px;
+}
+.cor-lock-bar input[type=password]{
+  width:90px;font-family:monospace;letter-spacing:3px;text-align:center;
+  padding:5px 8px;
+}
+.cor-lock-status{font-size:11px;color:var(--text3);flex:1}
+.cor-lock-status.ok{color:var(--green-txt)}
+html.light .cor-lock-bar{background:rgba(139,28,64,0.05)}
+
 /* ── logout button ──────────────────────────────────────────────────────── */
 .btn-logout{
   width:100%;padding:7px 12px;border-radius:var(--radius);
@@ -1496,11 +1510,33 @@ function openCourseEdit(id) {
         </div>
 
         <div id="ctab-cor-${id}" style="display:none">
-          <div class="field-row"><span class="field-label muted">Prerequisites</span><div class="readonly-val">${c.prereq}</div></div>
-          <div class="field-row"><span class="field-label muted">Textbook</span><div class="readonly-val">${c.textbook}</div></div>
-          <div class="field-row"><span class="field-label muted">Description</span><div class="readonly-val" style="white-space:pre-wrap">${c.desc}</div></div>
-          <div class="field-row"><span class="field-label muted">SLOs</span><div class="readonly-val" style="white-space:pre-wrap">${c.slos}</div></div>
-          <p class="help" style="margin-top:8px">⛔ COR content — fixed. Use Section Details for semester-specific fields.</p>
+          <div class="cor-lock-bar">
+            <span style="font-size:13px">🔒</span>
+            <span class="cor-lock-status" id="cor-status-${id}">${corUnlocked ? '🔓 Unlocked — COR fields are editable' : 'COR content locked — enter override code to edit'}</span>
+            <input type="password" maxlength="6" placeholder="••••"
+              style="${corUnlocked ? 'display:none' : ''}"
+              id="cor-pin-${id}"
+              oninput="checkCorPin(this.value,'${id}')"
+              onkeydown="if(event.key==='Enter')checkCorPin(this.value,'${id}')">
+            <button class="btn btn-sm btn-danger" id="cor-lock-btn-${id}"
+              style="${corUnlocked ? '' : 'display:none'}"
+              onclick="lockCor('${id}')">🔒 Lock</button>
+          </div>
+          <div id="cor-fields-${id}">
+            ${corUnlocked ? `
+              <div class="field-row"><span class="field-label">Prerequisites</span><textarea class="editable" rows="2" oninput="cEdit('${id}','prereq',this.value)">${c.prereq}</textarea></div>
+              <div class="field-row"><span class="field-label">Textbook</span><textarea class="editable" rows="2" oninput="cEdit('${id}','textbook',this.value)">${c.textbook}</textarea></div>
+              <div class="field-row"><span class="field-label">Description</span><textarea class="editable" rows="5" oninput="cEdit('${id}','desc',this.value)">${c.desc}</textarea></div>
+              <div class="field-row"><span class="field-label">SLOs</span><textarea class="editable" rows="6" oninput="cEdit('${id}','slos',this.value)">${c.slos}</textarea></div>
+              <p class="help" style="margin-top:4px">✏ Editing COR content. Changes export to syllabi and homepages.</p>
+            ` : `
+              <div class="field-row"><span class="field-label muted">Prerequisites</span><div class="readonly-val">${c.prereq}</div></div>
+              <div class="field-row"><span class="field-label muted">Textbook</span><div class="readonly-val">${c.textbook}</div></div>
+              <div class="field-row"><span class="field-label muted">Description</span><div class="readonly-val" style="white-space:pre-wrap">${c.desc}</div></div>
+              <div class="field-row"><span class="field-label muted">SLOs</span><div class="readonly-val" style="white-space:pre-wrap">${c.slos}</div></div>
+              <p class="help" style="margin-top:8px">⛔ COR content — enter override code above to edit.</p>
+            `}
+          </div>
         </div>
 
         <div id="ctab-sched-${id}" style="display:none">
@@ -1549,6 +1585,7 @@ function removeLastWeek(id) {
 
 // ─── POLICIES ─────────────────────────────────────────────────────────────
 let policiesUnlocked = false;
+let corUnlocked = false;
 
 function checkPolicyCode(val) {
   const status = document.getElementById('policy-code-status');
@@ -1571,6 +1608,62 @@ function checkPolicyCode(val) {
     if(addBtn) addBtn.style.display='none';
     if(lockBtn) lockBtn.style.display='none';
   }
+}
+
+// ─── COR UNLOCK ───────────────────────────────────────────────────────────
+function checkCorPin(val, courseId) {
+  if(val === '7018') {
+    corUnlocked = true;
+    // Re-render just the COR tab for this course
+    const c = COURSES.find(x=>x.id===courseId);
+    if(c) {
+      refreshCorTab(courseId, c);
+    }
+  }
+}
+
+function lockCor(courseId) {
+  corUnlocked = false;
+  const c = COURSES.find(x=>x.id===courseId);
+  if(c) refreshCorTab(courseId, c);
+}
+
+function refreshCorTab(id, c) {
+  const tab = document.getElementById('ctab-cor-'+id);
+  if(!tab) return;
+
+  const statusEl = tab.querySelector('.cor-lock-status');
+  const pinEl    = tab.querySelector('input[type=password]');
+  const lockBtn  = tab.querySelector('.btn.btn-sm.btn-danger');
+  const fieldsEl = document.getElementById('cor-fields-'+id);
+
+  if(statusEl) statusEl.textContent = corUnlocked
+    ? '🔓 Unlocked — COR fields are editable'
+    : 'COR content locked — enter override code to edit';
+  if(statusEl) statusEl.className = 'cor-lock-status' + (corUnlocked?' ok':'');
+  if(pinEl)    pinEl.style.display    = corUnlocked ? 'none' : '';
+  if(lockBtn)  lockBtn.style.display  = corUnlocked ? ''     : 'none';
+
+  if(fieldsEl) {
+    if(corUnlocked) {
+      fieldsEl.innerHTML = `
+        <div class="field-row"><span class="field-label">Prerequisites</span><textarea class="editable" rows="2" oninput="cEdit('${id}','prereq',this.value)">${c.prereq}</textarea></div>
+        <div class="field-row"><span class="field-label">Textbook</span><textarea class="editable" rows="2" oninput="cEdit('${id}','textbook',this.value)">${c.textbook}</textarea></div>
+        <div class="field-row"><span class="field-label">Description</span><textarea class="editable" rows="5" oninput="cEdit('${id}','desc',this.value)">${c.desc}</textarea></div>
+        <div class="field-row"><span class="field-label">SLOs</span><textarea class="editable" rows="6" oninput="cEdit('${id}','slos',this.value)">${c.slos}</textarea></div>
+        <p class="help" style="margin-top:4px">✏ Editing COR content. Changes export to syllabi and homepages.</p>
+      `;
+    } else {
+      fieldsEl.innerHTML = `
+        <div class="field-row"><span class="field-label muted">Prerequisites</span><div class="readonly-val">${c.prereq}</div></div>
+        <div class="field-row"><span class="field-label muted">Textbook</span><div class="readonly-val">${c.textbook}</div></div>
+        <div class="field-row"><span class="field-label muted">Description</span><div class="readonly-val" style="white-space:pre-wrap">${c.desc}</div></div>
+        <div class="field-row"><span class="field-label muted">SLOs</span><div class="readonly-val" style="white-space:pre-wrap">${c.slos}</div></div>
+        <p class="help" style="margin-top:8px">⛔ COR content — enter override code above to edit.</p>
+      `;
+    }
+  }
+  scheduleSave();
 }
 
 function lockPolicies() {
@@ -2510,6 +2603,7 @@ async function unlockDept(dept) {
 function logOut() {
   if(activeDept) saveAll();
   activeDept = null;
+  corUnlocked = false;
   selectedDeptId = null;
   activeInstructorId = null;
   // Reset lock screen state
@@ -2528,6 +2622,7 @@ function showLockScreen() {
   if(!confirm('Switch department? Your changes will be saved.')) return;
   if(activeDept) saveAll();
   activeDept = null;
+  corUnlocked = false;
   selectedDeptId = null;
   const ls = document.getElementById('lock-screen');
   if(ls) { ls.style.display='flex'; ls.style.opacity='1'; }
