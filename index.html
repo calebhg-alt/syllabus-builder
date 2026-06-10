@@ -802,6 +802,11 @@ select option{background:var(--bg3)}
           <button class="btn btn-primary" onclick="exportXLSX()" style="font-size:14px;padding:9px 22px">↓ Download .xlsx</button>
           <div id="exp-status" style="margin-top:10px;font-size:12px;color:var(--green-txt)"></div>
           <div class="divider"></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border-radius:var(--radius);border:1px solid var(--border)">
+            <span style="font-size:12px;color:var(--text2);flex:1">Auto-save stores all your data in this browser. Clear it to reset everything to defaults.</span>
+            <button class="btn btn-sm btn-danger" onclick="confirmClearSave()">Clear saved data</button>
+          </div>
+          <div class="divider"></div>
           <div class="export-section-title" style="margin-bottom:8px">Next Steps</div>
           <div class="steps">
             <div class="step-row"><div class="step-num">1</div><div class="step-text">Download the .xlsx above.</div></div>
@@ -1999,10 +2004,102 @@ function applyStoredTheme() {
   }
 }
 
+// ─── PERSISTENCE ──────────────────────────────────────────────────────────
+const STORAGE_KEY = 'avc_syllabus_builder_v1';
+
+function saveAll() {
+  try {
+    const formFields = {};
+    ['i_name','i_email','i_phone','i_office','i_hours','i_semester',
+     'g_hw','g_proj','g_exam','g_part','g_A','g_B','g_C','g_D','g_F','g_missed'
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) formFields[id] = el.value;
+    });
+    const payload = {
+      courses: COURSES,
+      tools: TOOLS,
+      policies: POLICIES,
+      formFields,
+      savedAt: new Date().toISOString()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch(e) { console.warn('Save failed:', e); }
+}
+
+function loadAll() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    const payload = JSON.parse(raw);
+    if(payload.courses && Array.isArray(payload.courses)) COURSES = payload.courses;
+    if(payload.tools   && Array.isArray(payload.tools))   TOOLS   = payload.tools;
+    if(payload.policies && Array.isArray(payload.policies)) POLICIES = payload.policies;
+    if(payload.formFields) {
+      // Fields may not exist in DOM yet — store for after render
+      window._pendingFormFields = payload.formFields;
+    }
+    return payload.savedAt || true;
+  } catch(e) { console.warn('Load failed:', e); return false; }
+}
+
+function restoreFormFields() {
+  const fields = window._pendingFormFields;
+  if(!fields) return;
+  Object.entries(fields).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if(el) el.value = val;
+  });
+  window._pendingFormFields = null;
+}
+
+function clearSave() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+}
+
+function confirmClearSave() {
+  if(!confirm('Clear all saved data and reset to defaults? This cannot be undone.')) return;
+  clearSave();
+  location.reload();
+}
+
+// Auto-save: debounced 800ms after any input/change anywhere
+let _saveTimer = null;
+function scheduleSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(saveAll, 800);
+}
+document.addEventListener('input',  scheduleSave);
+document.addEventListener('change', scheduleSave);
+
+// Also save on page unload/hide
+window.addEventListener('beforeunload', saveAll);
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden') saveAll();
+});
+
+// ── LOAD & INIT ────────────────────────────────────────────────────────────
+const savedAt = loadAll();
 applyStoredTheme();
 rebuildSidebarCourseNav();
 rebuildToolSidebarNav();
 renderPolicies();
+restoreFormFields();
+
+// Show restore notice if data was found
+if(savedAt) {
+  const when = typeof savedAt === 'string'
+    ? new Date(savedAt).toLocaleString()
+    : 'previous session';
+  const footer = document.querySelector('.sidebar-footer span');
+  if(footer) {
+    footer.textContent = 'Restored from ' + when;
+    setTimeout(() => { footer.textContent = 'All changes auto-saved'; }, 4000);
+  }
+} else {
+  const footer = document.querySelector('.sidebar-footer span');
+  if(footer) footer.textContent = 'All changes auto-saved';
+}
 </script>
 </body>
 </html>
