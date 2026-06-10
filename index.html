@@ -2062,9 +2062,14 @@ let sylMode = 'canvas';
 function initSyllabusGen() {
   const sel = document.getElementById('syl_course');
   if(!sel) return;
+  if(!COURSES || !COURSES.length) {
+    sel.innerHTML = '<option value="">No courses loaded — unlock a department first</option>';
+    return;
+  }
   sel.innerHTML = COURSES.map(c=>`<option value="${c.id}">${c.code} — ${c.title}</option>`).join('');
   const sem = document.getElementById('i_semester');
-  if(sem) document.getElementById('syl_semester').value = sem.value;
+  const sylSem = document.getElementById('syl_semester');
+  if(sem && sylSem) sylSem.value = sem.value;
   updateSyllabusPreview();
 }
 
@@ -2079,7 +2084,11 @@ function setSylMode(mode) {
 function updateSyllabusPreview() {
   const id = document.getElementById('syl_course')?.value;
   const c = id ? COURSES.find(x=>x.id===id) : null;
-  if(!c) return;
+  if(!c) {
+    const pre = document.getElementById('syl-code-preview');
+    if(pre) pre.textContent = 'Select a course above to generate the syllabus.';
+    return;
+  }
   const html = sylMode==='print' ? buildSyllabusPrintHTML(c) : buildSyllabusCanvasHTML(c);
   const pre = document.getElementById('syl-code-preview');
   if(pre) pre.textContent = html;
@@ -2117,7 +2126,20 @@ function printSyllabus() {
   setTimeout(()=>w.print(), 500);
 }
 
-function gv(id){ return (document.getElementById(id)||{}).value||''; }
+function gv(id) {
+  // Try DOM field first
+  const el = document.getElementById(id);
+  if(el && el.value) return el.value;
+  // Fall back to active instructor record for instructor fields
+  if(activeDept && INSTRUCTORS && activeInstructorId) {
+    const inst = INSTRUCTORS.find(i=>i.id===activeInstructorId);
+    if(inst) {
+      const map = {i_name:'name',i_email:'email',i_phone:'phone',i_office:'office',i_hours:'hours'};
+      if(map[id] && inst[map[id]]) return inst[map[id]];
+    }
+  }
+  return '';
+}
 
 function getPoliciesHTML(forPrint) {
   const style = forPrint
