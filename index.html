@@ -2167,9 +2167,25 @@ function getToolListHTML(c, forPrint) {
 }
 
 function getSLOsHTML(c, forPrint) {
-  const slos = c.slos.split('\n').filter(s=>s.trim());
+  const slos = (c.slos||'').split('\n').filter(s=>s.trim());
+  if(!slos.length) return '';
   if(forPrint) return slos.map(s=>`<p style="font-size:11px;margin:3px 0">${s}</p>`).join('');
   return `<ol style="margin:0;padding-left:1.4em">${slos.map(s=>`<li style="margin-bottom:4px">${s.replace(/^\d+\.\s*/,'')}</li>`).join('')}</ol>`;
+}
+
+function getOutlineHTML(c, forPrint) {
+  const items = (c.outline||'').split('\n').filter(s=>s.trim());
+  if(!items.length) return '';
+  if(forPrint) {
+    return items.map(s=>{
+      const isSubItem = /^\d+\.\d/.test(s);
+      return `<p style="font-size:11px;margin:2px 0;padding-left:${isSubItem?'14px':'0'}">${s}</p>`;
+    }).join('');
+  }
+  return `<ul style="margin:0;padding-left:0;list-style:none">${items.map(s=>{
+    const isSubItem = /^\d+\.\d/.test(s);
+    return `<li style="margin-bottom:3px;padding-left:${isSubItem?'16px':'0'};font-size:.93rem">${s}</li>`;
+  }).join('')}</ul>`;
 }
 
 function buildSyllabusCanvasHTML(c) {
