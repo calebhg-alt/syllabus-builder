@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AVC Welding — Syllabus Builder</title>
+<title>AVC Syllabus Builder</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* ── reset & base ───────────────────────────────────────────────────────── */
@@ -457,9 +457,127 @@ select option{background:var(--bg3)}
 .policy-pill p{font-size:12px;color:var(--text2);line-height:1.5}
 .flex-gap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+
+/* ── lock screen ────────────────────────────────────────────────────────── */
+#lock-screen{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#0d0f11 0%,#1a0a13 60%,#0d0f11 100%);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+}
+html.light #lock-screen{background:linear-gradient(135deg,#f1f3f5 0%,#fdf0f4 60%,#f1f3f5 100%)}
+.lock-card{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+  padding:36px 40px;width:360px;max-width:calc(100vw - 32px);
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);text-align:center;
+}
+.lock-logo{
+  width:56px;height:56px;border-radius:12px;background:var(--burg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:900;color:#fff;margin:0 auto 16px;letter-spacing:-1px;
+}
+.lock-card h1{font-size:20px;font-weight:700;color:#fff;margin-bottom:4px}
+.lock-card p{font-size:13px;color:var(--text3);margin-bottom:24px}
+html.light .lock-card h1{color:var(--text)}
+.dept-btn{
+  width:100%;padding:14px 16px;border-radius:var(--radius);border:1px solid var(--border2);
+  background:var(--bg3);color:var(--text);cursor:pointer;font-size:14px;font-weight:500;
+  margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:all .15s;
+  text-align:left;
+}
+.dept-btn:hover{border-color:var(--burg);background:rgba(139,28,64,0.1)}
+.dept-btn.selected{border-color:var(--burg);background:rgba(139,28,64,0.15)}
+.dept-icon{
+  width:36px;height:36px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex-shrink:0;
+}
+.lock-input-wrap{margin-top:16px;text-align:left}
+.lock-input-wrap label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px}
+.lock-pin{
+  width:100%;padding:10px 14px;border:1px solid var(--border2);border-radius:var(--radius);
+  background:var(--bg3);color:var(--text);font-size:18px;letter-spacing:6px;
+  text-align:center;font-family:monospace;
+}
+.lock-pin:focus{outline:none;border-color:var(--burg);box-shadow:0 0 0 2px rgba(139,28,64,0.25)}
+.lock-error{font-size:12px;color:#f87171;margin-top:6px;min-height:18px;text-align:center}
+.lock-submit{
+  width:100%;padding:11px;border-radius:var(--radius);border:none;
+  background:var(--burg);color:#fff;font-size:14px;font-weight:600;
+  cursor:pointer;margin-top:12px;transition:background .12s;
+}
+.lock-submit:hover{background:var(--burg-d)}
+
+/* ── dept badge in sidebar ──────────────────────────────────────────────── */
+.dept-badge{
+  font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;
+  background:rgba(139,28,64,0.2);color:#e8a0b4;
+}
+.dept-switcher{
+  display:flex;align-items:center;gap:6px;padding:7px 16px;
+  font-size:12px;color:var(--text3);border-top:1px solid var(--border);
+  cursor:pointer;transition:color .12s;
+}
+.dept-switcher:hover{color:var(--text)}
+
+/* ── logout button ──────────────────────────────────────────────────────── */
+.btn-logout{
+  width:100%;padding:7px 12px;border-radius:var(--radius);
+  border:1px solid var(--border2);background:var(--bg3);
+  color:var(--text2);cursor:pointer;font-size:12px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .15s;letter-spacing:.3px;
+}
+.btn-logout:hover{
+  background:rgba(139,28,64,0.18);border-color:var(--burg);color:#fff;
+}
+html.light .btn-logout:hover{background:rgba(139,28,64,0.1)}
+
+/* ── instructor picker ──────────────────────────────────────────────────── */
+.instructor-row{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--bg3);margin-bottom:6px;cursor:pointer;transition:all .12s;
+}
+.instructor-row:hover{border-color:var(--burg);background:rgba(139,28,64,0.06)}
+.instructor-row.active{border-color:var(--burg);background:rgba(139,28,64,0.12)}
+.instructor-avatar{
+  width:32px;height:32px;border-radius:50%;background:var(--burg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.instructor-info{flex:1;min-width:0}
+.instructor-info strong{display:block;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.instructor-info span{font-size:11px;color:var(--text3)}
+html.light .instructor-info strong{color:var(--text)}
+
 </style>
 </head>
 <body>
+
+<!-- ══════════════════════════════════════════════════════════ LOCK SCREEN -->
+<div id="lock-screen">
+  <div class="lock-card">
+    <div class="lock-logo">AVC</div>
+    <h1>Syllabus Builder</h1>
+    <p>Select your department to continue</p>
+    <button class="dept-btn" id="dept-btn-welding" onclick="selectDept('welding')">
+      <div class="dept-icon" style="background:rgba(139,28,64,0.2)">🔧</div>
+      <div><div style="font-weight:600">Welding</div><div style="font-size:11px;color:var(--text3)">CTE Department</div></div>
+    </button>
+    <button class="dept-btn" id="dept-btn-autobody" onclick="selectDept('autobody')">
+      <div class="dept-icon" style="background:rgba(241,138,32,0.2)">🚗</div>
+      <div><div style="font-weight:600">Auto Body</div><div style="font-size:11px;color:var(--text3)">CTE Department</div></div>
+    </button>
+    <div class="lock-input-wrap" id="lock-pin-wrap" style="display:none">
+      <label id="lock-pin-label">Enter department PIN</label>
+      <input class="lock-pin" type="password" id="lock-pin" maxlength="6"
+        placeholder="••••" oninput="lockPinInput(this.value)"
+        onkeydown="if(event.key==='Enter')submitPin()">
+      <div class="lock-error" id="lock-error"></div>
+      <button class="lock-submit" onclick="submitPin()">Unlock →</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ═══════════════════════════════════════════════════════════════ MODAL -->
 <div class="modal-overlay" id="modal-overlay">
@@ -479,7 +597,7 @@ select option{background:var(--bg3)}
     <div class="logo-mark">AVC</div>
     <div class="logo-text">
       <strong>Syllabus Builder</strong>
-      <span>Welding Department</span>
+      <span id="sidebar-dept-label">Welding Department</span>
     </div>
   </div>
   <div class="sidebar-scroll">
@@ -531,11 +649,16 @@ select option{background:var(--bg3)}
       </button>
     </div>
   </div>
-  <div class="sidebar-footer" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-    <span style="color:var(--text3)">All changes live</span>
-    <button class="mode-toggle" onclick="toggleMode()" id="mode-toggle-btn" title="Switch light/dark mode">
-      <div class="toggle-track"><div class="toggle-thumb"></div></div>
-      <span id="mode-label">Light</span>
+  <div class="sidebar-footer" style="display:flex;flex-direction:column;gap:8px;padding:10px 12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="color:var(--text3);font-size:11px" id="footer-status">All changes auto-saved</span>
+      <button class="mode-toggle" onclick="toggleMode()" id="mode-toggle-btn" title="Switch light/dark mode">
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <span id="mode-label">Light</span>
+      </button>
+    </div>
+    <button class="btn-logout" onclick="logOut()" title="Save and return to department select">
+      🔒 Log Out
     </button>
   </div>
 </aside>
@@ -553,9 +676,19 @@ select option{background:var(--bg3)}
 
     <!-- ════════════════════════════════════════ INSTRUCTOR INFO -->
     <div id="panel-instructor">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <h3>Select Instructor</h3>
+          <button class="btn btn-primary btn-sm" onclick="openAddInstructor()">+ Add Instructor</button>
+        </div>
+        <div class="card-body">
+          <div id="instructor-roster"></div>
+          <p class="help" style="margin-top:6px">Click an instructor to load their info into the fields below.</p>
+        </div>
+      </div>
       <div class="card accent-steel">
         <div class="card-header">
-          <h3>Instructor & Contact</h3>
+          <h3>Instructor Details</h3>
           <span class="badge badge-yellow">Update each semester</span>
         </div>
         <div class="card-body">
@@ -825,6 +958,121 @@ select option{background:var(--bg3)}
 <!-- ══════════════════════════════════════════════════════════════ SCRIPT -->
 <script>
 // ─── DATA ─────────────────────────────────────────────────────────────────
+
+
+// ─── DEFAULT DATA PER DEPARTMENT ──────────────────────────────────────────
+const DEPT_DEFAULTS = {
+  welding: null,  // uses the inline COURSES/TOOLS/POLICIES already defined
+  autobody: {
+    courses: [
+      {
+        id:'ab101', code:'AB101', title:'Introduction to Auto Body', units:'3',
+        color:'#F18A20', toolList:'ab_basic',
+        prereq:'N/A',
+        textbook:'Auto Body Repair Technology — Duffy, Delmar Publishers',
+        desc:'Introduction to auto body repair and refinishing. Topics include safety, hand tools, shop equipment, minor dent repair, surface preparation, and basic refinishing techniques. (CSU, AVC)',
+        slos:'1. Demonstrate safe work practices in the auto body shop environment.\n2. Identify and properly use basic auto body hand tools and shop equipment.\n3. Perform minor dent repair and surface preparation to industry standards.',
+        crn:'', days:'', times:'', room:'', start:'', end:'',
+        numGroups:1,
+        groupLabels:['Exam / Chapter','Project / Assignment Due'],
+        schedule: Array.from({length:16},(_,i)=>({wk:i+1,dates:'Week '+(i+1),c:[i===0?'Safety / Orientation':i===7?'MIDTERM':i===15?'FINAL':'',' ']}))
+      },
+      {
+        id:'ab110', code:'AB110', title:'Collision Repair I', units:'4',
+        color:'#F18A20', toolList:'ab_basic',
+        prereq:'Prereq: AB101',
+        textbook:'Auto Body Repair Technology — Duffy, Delmar Publishers',
+        desc:'Fundamentals of collision repair including straightening techniques, panel replacement, welding applications in body repair, and surface preparation for refinishing. (CSU, AVC)',
+        slos:'1. Demonstrate safe welding and cutting operations in a body shop environment.\n2. Perform structural and non-structural panel repair and replacement to industry standards.',
+        crn:'', days:'', times:'', room:'', start:'', end:'',
+        numGroups:1,
+        groupLabels:['Exam / Chapter','Project / Assignment Due'],
+        schedule: Array.from({length:16},(_,i)=>({wk:i+1,dates:'Week '+(i+1),c:[i===0?'Safety Test':i===7?'MIDTERM':i===15?'FINAL':'',' ']}))
+      },
+    ],
+    tools: [
+      {
+        id:'ab_basic',
+        name:'Tool List — Auto Body Basic',
+        usedFor:'AB101, AB110',
+        items:[
+          {item:'Safety glasses (ANSI Z87)',req:'Required',note:''},
+          {item:'Leather work gloves',req:'Required',note:''},
+          {item:'Shop coat or coveralls — no loose clothing',req:'Required',note:''},
+          {item:'Leather boots — extend above ankle',req:'Required',note:''},
+          {item:'Body hammer set (ball-peen, pick, shrinking)',req:'Required',note:''},
+          {item:'Dolly block set',req:'Required',note:''},
+          {item:'Pulling rods / slide hammer',req:'Required',note:''},
+          {item:'Body filler applicator (squeegees, spreaders)',req:'Required',note:''},
+          {item:'DA sander / orbital sander',req:'Required',note:''},
+          {item:'Sandpaper assortment (80, 120, 180, 320, 400 grit)',req:'Required',note:''},
+          {item:'Masking tape and masking paper',req:'Required',note:''},
+          {item:'Tack cloth',req:'Required',note:''},
+          {item:'Paint mixing cups and stir sticks',req:'Required',note:''},
+          {item:'Spray gun (HVLP recommended)',req:'Recommended',note:'Provided in lab for beginners'},
+          {item:'Respirator — NIOSH-approved for paint/body filler fumes',req:'Required',note:''},
+          {item:'Hearing protection',req:'Required',note:''},
+        ]
+      }
+    ],
+    policies: [
+      ['GRADING','Submitting all assigned work and passing class quizzes, tests, and exams are essential for successful completion. Missed exams and assignments generally cannot be made up unless required by accommodation or College policy. Completion of the final examination is required.'],
+      ['LATE WORK / MAKE-UP','No homework, exam, test, quiz, or project will be accepted after the stated due date.'],
+      ['ATTENDANCE — GENERAL','Absences exceeding the hours the course meets per week may result in a drop from the course.'],
+      ['ATTENDANCE — FINAL EXAM','Failure to complete the final exam results in an automatic No-Pass. Finals cannot be made up.'],
+      ['ATTENDANCE — FIRST DAY','Students may be dropped if they do not attend the first class session regardless of reason.'],
+      ['ACADEMIC HONESTY','Cheating leads to disciplinary action. Students found cheating will receive F (0%) for the assignment.'],
+      ['CONDUCT — GENERAL','No cell phones/devices during class/lab unless authorized. No sleeping. No eating. No drinks in the lab.'],
+      ['AUTO BODY SHOP RULES','Safety glasses required at all times. Work boots required. All paint, chemical, and OSHA regulations must be followed. No personal projects permitted. Spray booth use must be authorized by instructor.'],
+      ['CHEMICALS & HAZARDOUS MATERIALS','Students must complete Right-to-Know/HAZMAT training before using any chemical products. SDS sheets must be reviewed before first use of any product.'],
+      ['DISCIPLINE','First: verbal warning. Second: suspension for remainder of day and next session.'],
+      ['ACCOMMODATION (OSD)','Contact OSD at 661-722-6360. Accommodations must be arranged in advance. ACCOMMODATIONS ARE NOT RETROACTIVE.'],
+      ['SAFETY TRAINING','All students must complete mandatory shop safety training before any hands-on lab activity.'],
+    ]
+  }
+};
+
+// ─── DEPARTMENTS ──────────────────────────────────────────────────────────
+const DEPARTMENTS = {
+  welding: {
+    id: 'welding',
+    name: 'Welding',
+    label: 'Welding Department',
+    icon: '🔧',
+    pin: '7018',
+    color: '#8B1C40',
+    storageKey: 'avc_syllabus_welding_v1',
+  },
+  autobody: {
+    id: 'autobody',
+    name: 'Auto Body',
+    label: 'Auto Body Department',
+    icon: '🚗',
+    pin: '6010',
+    color: '#F18A20',
+    storageKey: 'avc_syllabus_autobody_v1',
+  }
+};
+
+let activeDept = null;   // set after unlock
+let selectedDeptId = null; // set when dept button clicked
+
+// ─── INSTRUCTORS (per-department pools) ───────────────────────────────────
+const DEFAULT_INSTRUCTORS = {
+  welding: [
+    { id:'healey', name:'Mr. Healey', email:'Caleb.Healey@avc.edu',
+      phone:'(661) 722-6300 Ext: 6002', office:'EL-139',
+      hours:'Mon–Fri 6:30–7:30 AM / EL-139 — Appointment Only' },
+  ],
+  autobody: [
+    { id:'ab_instructor1', name:'Instructor Name', email:'instructor@avc.edu',
+      phone:'(661) 722-6300', office:'', hours:'' },
+  ]
+};
+
+let INSTRUCTORS = {};   // loaded per dept from storage or defaults
+let activeInstructorId = null;
+
 const DEFAULTS = {
   instructorName:'Mr. Healey', instructorEmail:'Caleb.Healey@avc.edu',
   instructorPhone:'(661) 722-6300 Ext: 6002', instructorOffice:'EL-139',
@@ -2007,7 +2255,12 @@ function applyStoredTheme() {
 // ─── PERSISTENCE ──────────────────────────────────────────────────────────
 const STORAGE_KEY = 'avc_syllabus_builder_v1';
 
+function getDeptStorageKey() {
+  return activeDept ? activeDept.storageKey : STORAGE_KEY;
+}
+
 function saveAll() {
+  if(!activeDept) return;
   try {
     const formFields = {};
     ['i_name','i_email','i_phone','i_office','i_hours','i_semester',
@@ -2017,31 +2270,43 @@ function saveAll() {
       if(el) formFields[id] = el.value;
     });
     const payload = {
-      courses: COURSES,
-      tools: TOOLS,
-      policies: POLICIES,
-      formFields,
-      savedAt: new Date().toISOString()
+      courses: COURSES, tools: TOOLS, policies: POLICIES,
+      instructors: INSTRUCTORS, activeInstructorId,
+      formFields, savedAt: new Date().toISOString()
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(getDeptStorageKey(), JSON.stringify(payload));
   } catch(e) { console.warn('Save failed:', e); }
 }
 
-function loadAll() {
+function loadDeptData(dept) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return false;
-    const payload = JSON.parse(raw);
-    if(payload.courses && Array.isArray(payload.courses)) COURSES = payload.courses;
-    if(payload.tools   && Array.isArray(payload.tools))   TOOLS   = payload.tools;
-    if(payload.policies && Array.isArray(payload.policies)) POLICIES = payload.policies;
-    if(payload.formFields) {
-      // Fields may not exist in DOM yet — store for after render
-      window._pendingFormFields = payload.formFields;
+    const raw = localStorage.getItem(dept.storageKey);
+    if(raw) {
+      const payload = JSON.parse(raw);
+      if(payload.courses  && Array.isArray(payload.courses))  COURSES  = payload.courses;
+      if(payload.tools    && Array.isArray(payload.tools))    TOOLS    = payload.tools;
+      if(payload.policies && Array.isArray(payload.policies)) POLICIES = payload.policies;
+      if(payload.instructors) INSTRUCTORS = payload.instructors;
+      if(payload.activeInstructorId) activeInstructorId = payload.activeInstructorId;
+      if(payload.formFields) window._pendingFormFields = payload.formFields;
+      return payload.savedAt || true;
     }
-    return payload.savedAt || true;
-  } catch(e) { console.warn('Load failed:', e); return false; }
+  } catch(e) { console.warn('Load failed:', e); }
+  // No saved data — load defaults
+  if(dept.id === 'welding') {
+    // COURSES/TOOLS/POLICIES already set from inline defaults
+    INSTRUCTORS = JSON.parse(JSON.stringify(DEFAULT_INSTRUCTORS.welding));
+  } else if(DEPT_DEFAULTS[dept.id]) {
+    const d = DEPT_DEFAULTS[dept.id];
+    COURSES  = JSON.parse(JSON.stringify(d.courses));
+    TOOLS    = JSON.parse(JSON.stringify(d.tools));
+    POLICIES = JSON.parse(JSON.stringify(d.policies));
+    INSTRUCTORS = JSON.parse(JSON.stringify(DEFAULT_INSTRUCTORS[dept.id] || []));
+  }
+  return false;
 }
+
+function loadAll() { return false; } // legacy stub — not used directly anymore
 
 function restoreFormFields() {
   const fields = window._pendingFormFields;
@@ -2058,8 +2323,8 @@ function clearSave() {
 }
 
 function confirmClearSave() {
-  if(!confirm('Clear all saved data and reset to defaults? This cannot be undone.')) return;
-  clearSave();
+  if(!confirm('Clear saved data for this department and reset to defaults? This cannot be undone.')) return;
+  if(activeDept) try { localStorage.removeItem(activeDept.storageKey); } catch(e){}
   location.reload();
 }
 
@@ -2078,28 +2343,216 @@ document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'hidden') saveAll();
 });
 
-// ── LOAD & INIT ────────────────────────────────────────────────────────────
-const savedAt = loadAll();
-applyStoredTheme();
-rebuildSidebarCourseNav();
-rebuildToolSidebarNav();
-renderPolicies();
-restoreFormFields();
-
-// Show restore notice if data was found
-if(savedAt) {
-  const when = typeof savedAt === 'string'
-    ? new Date(savedAt).toLocaleString()
-    : 'previous session';
-  const footer = document.querySelector('.sidebar-footer span');
-  if(footer) {
-    footer.textContent = 'Restored from ' + when;
-    setTimeout(() => { footer.textContent = 'All changes auto-saved'; }, 4000);
-  }
-} else {
-  const footer = document.querySelector('.sidebar-footer span');
-  if(footer) footer.textContent = 'All changes auto-saved';
+// ─── LOCK SCREEN & DEPARTMENT SYSTEM ─────────────────────────────────────
+function selectDept(deptId) {
+  selectedDeptId = deptId;
+  document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('dept-btn-'+deptId);
+  if(btn) btn.classList.add('selected');
+  const wrap = document.getElementById('lock-pin-wrap');
+  if(wrap) wrap.style.display = 'block';
+  const lbl = document.getElementById('lock-pin-label');
+  const dept = DEPARTMENTS[deptId];
+  if(lbl) lbl.textContent = dept.name + ' PIN';
+  document.getElementById('lock-error').textContent = '';
+  document.getElementById('lock-pin').value = '';
+  document.getElementById('lock-pin').focus();
 }
+
+function lockPinInput(val) {
+  if(val.length >= 4) submitPin();
+}
+
+function submitPin() {
+  if(!selectedDeptId) {
+    document.getElementById('lock-error').textContent = 'Please select a department first.';
+    return;
+  }
+  const pin = document.getElementById('lock-pin').value.trim();
+  const dept = DEPARTMENTS[selectedDeptId];
+  if(pin === dept.pin) {
+    unlockDept(dept);
+  } else {
+    document.getElementById('lock-error').textContent = 'Incorrect PIN. Try again.';
+    document.getElementById('lock-pin').value = '';
+    document.getElementById('lock-pin').focus();
+  }
+}
+
+function unlockDept(dept) {
+  activeDept = dept;
+  // Update sidebar branding
+  const lbl = document.getElementById('sidebar-dept-label');
+  if(lbl) lbl.textContent = dept.label;
+  const logoMark = document.querySelector('.logo-mark');
+  if(logoMark) logoMark.style.background = dept.color;
+  const switchLbl = document.getElementById('dept-switch-label');
+  if(switchLbl) switchLbl.textContent = dept.name + ' — Switch';
+  document.title = 'AVC ' + dept.name + ' Syllabus Builder';
+  // Load data
+  const savedAt = loadDeptData(dept);
+  // Hide lock screen
+  const ls = document.getElementById('lock-screen');
+  if(ls) { ls.style.opacity='0'; ls.style.transition='opacity .3s'; setTimeout(()=>ls.style.display='none',300); }
+  // Build UI
+  applyStoredTheme();
+  rebuildSidebarCourseNav();
+  rebuildToolSidebarNav();
+  renderPolicies();
+  restoreFormFields();
+  // Active instructor
+  if(activeInstructorId) {
+    const inst = (INSTRUCTORS||[]).find(i=>i.id===activeInstructorId);
+    if(inst) applyInstructor(inst, false);
+  } else if(INSTRUCTORS && INSTRUCTORS.length) {
+    applyInstructor(INSTRUCTORS[0], false);
+    activeInstructorId = INSTRUCTORS[0].id;
+  }
+  renderInstructorRoster();
+  // Restore notice
+  const footer = document.getElementById('footer-status');
+  if(savedAt) {
+    const when = typeof savedAt==='string' ? new Date(savedAt).toLocaleString() : 'previous session';
+    if(footer) { footer.textContent='Restored: '+when; setTimeout(()=>footer.textContent='All changes auto-saved',4000); }
+  } else {
+    if(footer) footer.textContent = 'All changes auto-saved';
+  }
+}
+
+function logOut() {
+  saveAll();
+  activeDept = null;
+  selectedDeptId = null;
+  activeInstructorId = null;
+  // Reset lock screen state
+  const ls = document.getElementById('lock-screen');
+  if(ls){ ls.style.display='flex'; ls.style.opacity='1'; }
+  document.querySelectorAll('.dept-btn').forEach(b=>b.classList.remove('selected'));
+  const pinWrap = document.getElementById('lock-pin-wrap');
+  if(pinWrap) pinWrap.style.display='none';
+  const pin = document.getElementById('lock-pin');
+  if(pin) pin.value='';
+  const err = document.getElementById('lock-error');
+  if(err) err.textContent='';
+}
+
+function showLockScreen() {
+  if(!confirm('Switch department? Unsaved changes are stored automatically.')) return;
+  saveAll();
+  activeDept = null;
+  selectedDeptId = null;
+  const ls = document.getElementById('lock-screen');
+  if(ls) { ls.style.display='flex'; ls.style.opacity='1'; }
+  document.querySelectorAll('.dept-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('lock-pin-wrap').style.display='none';
+  document.getElementById('lock-pin').value='';
+  document.getElementById('lock-error').textContent='';
+}
+
+// ─── INSTRUCTOR SYSTEM ────────────────────────────────────────────────────
+function renderInstructorRoster() {
+  const el = document.getElementById('instructor-roster');
+  if(!el || !INSTRUCTORS) return;
+  el.innerHTML = (INSTRUCTORS||[]).map(inst => `
+    <div class="instructor-row ${inst.id===activeInstructorId?'active':''}"
+         onclick="selectInstructor('${inst.id}')">
+      <div class="instructor-avatar">${inst.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+      <div class="instructor-info">
+        <strong>${inst.name}</strong>
+        <span>${inst.email||'No email set'}</span>
+      </div>
+      <button class="btn-icon danger" onclick="event.stopPropagation();deleteInstructor('${inst.id}')" title="Remove">×</button>
+    </div>
+  `).join('') || '<p style="font-size:12px;color:var(--text3)">No instructors added yet.</p>';
+}
+
+function selectInstructor(id) {
+  const inst = (INSTRUCTORS||[]).find(i=>i.id===id);
+  if(!inst) return;
+  activeInstructorId = id;
+  applyInstructor(inst, true);
+  renderInstructorRoster();
+  scheduleSave();
+}
+
+function applyInstructor(inst, showToast) {
+  const map = {i_name:'name',i_email:'email',i_phone:'phone',i_office:'office',i_hours:'hours'};
+  Object.entries(map).forEach(([elId, key]) => {
+    const el = document.getElementById(elId);
+    if(el && inst[key] !== undefined) el.value = inst[key];
+  });
+  if(showToast) {
+    const footer = document.getElementById('footer-status');
+    if(footer) { footer.textContent='Loaded: '+inst.name; setTimeout(()=>footer.textContent='All changes auto-saved',3000); }
+  }
+}
+
+function syncInstructorFromFields() {
+  // Push current form fields back into the active instructor record
+  if(!activeInstructorId || !INSTRUCTORS) return;
+  const inst = INSTRUCTORS.find(i=>i.id===activeInstructorId);
+  if(!inst) return;
+  const map = {i_name:'name',i_email:'email',i_phone:'phone',i_office:'office',i_hours:'hours'};
+  Object.entries(map).forEach(([elId,key]) => {
+    const el = document.getElementById(elId);
+    if(el) inst[key] = el.value;
+  });
+}
+
+function openAddInstructor() {
+  openModal();
+  document.getElementById('modal-title').textContent = 'Add Instructor';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field-row"><span class="field-label">Name</span><input type="text" class="editable" id="ni_name" placeholder="e.g. Mr. Smith"></div>
+    <div class="field-row"><span class="field-label">Email</span><input type="text" class="editable" id="ni_email" placeholder="name@avc.edu"></div>
+    <div class="field-row"><span class="field-label">Phone</span><input type="text" class="editable" id="ni_phone" placeholder="(661) 722-6300 Ext: XXXX"></div>
+    <div class="field-row"><span class="field-label">Office</span><input type="text" class="editable" id="ni_office" placeholder="e.g. EL-140"></div>
+    <div class="field-row"><span class="field-label">Office Hours</span><input type="text" class="editable" id="ni_hours" placeholder="Mon–Fri 7:00–8:00 AM"></div>
+  `;
+  document.getElementById('modal-actions').innerHTML = `
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="addInstructor()">Add</button>
+  `;
+}
+
+function addInstructor() {
+  const g = id => (document.getElementById(id)||{}).value||'';
+  const name = g('ni_name').trim();
+  if(!name){ alert('Name is required'); return; }
+  if(!INSTRUCTORS) INSTRUCTORS = [];
+  const inst = {
+    id: 'inst_'+Date.now(),
+    name, email:g('ni_email'), phone:g('ni_phone'),
+    office:g('ni_office'), hours:g('ni_hours')
+  };
+  INSTRUCTORS.push(inst);
+  closeModal();
+  renderInstructorRoster();
+  selectInstructor(inst.id);
+  scheduleSave();
+}
+
+function deleteInstructor(id) {
+  if(!confirm('Remove this instructor?')) return;
+  INSTRUCTORS = (INSTRUCTORS||[]).filter(i=>i.id!==id);
+  if(activeInstructorId===id) {
+    activeInstructorId = INSTRUCTORS.length ? INSTRUCTORS[0].id : null;
+    if(activeInstructorId) applyInstructor(INSTRUCTORS[0], false);
+  }
+  renderInstructorRoster();
+  scheduleSave();
+}
+
+// Sync form fields → instructor record on every input in the instructor panel
+document.addEventListener('input', e => {
+  const tracked = ['i_name','i_email','i_phone','i_office','i_hours'];
+  if(tracked.includes(e.target.id)) syncInstructorFromFields();
+});
+
+// ── STARTUP ────────────────────────────────────────────────────────────────
+applyStoredTheme();
+// Lock screen shown by default (display:flex in HTML)
+// App renders only after unlockDept() is called
 </script>
 </body>
 </html>
