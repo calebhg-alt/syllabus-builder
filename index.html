@@ -541,6 +541,15 @@ html.light .lock-card h1{color:var(--text)}
 .cor-lock-status.ok{color:var(--green-txt)}
 html.light .cor-lock-bar{background:rgba(139,28,64,0.05)}
 
+/* ── rich paste indicator ──────────────────────────────────────────────── */
+.paste-flash{
+  animation: pasteFlash .5s ease;
+}
+@keyframes pasteFlash {
+  0%  { background: rgba(141,185,202,0.35); }
+  100%{ background: var(--yellow); }
+}
+
 /* ── logout button ──────────────────────────────────────────────────────── */
 .btn-logout{
   width:100%;padding:7px 12px;border-radius:var(--radius);
@@ -2342,6 +2351,130 @@ ${getPoliciesHTML(true)}
 </div>
 </body></html>`;
 }
+
+// ─── RICH PASTE HANDLER ───────────────────────────────────────────────────
+// Converts HTML clipboard content → clean structured plain text
+// Preserves: numbered lists, bullet lists, indentation, line breaks, bold labels
+
+function htmlToStructuredText(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+
+  function walk(node, depth) {
+    let out = '';
+    const tag = node.nodeType === 1 ? node.tagName.toLowerCase() : null;
+
+    // Block-level elements that should each become a new line
+    const isBlock = tag && /^(p|div|h[1-6]|li|br|tr|td|th|blockquote|pre|section|article|header|footer)$/.test(tag);
+
+    if(node.nodeType === 3) {
+      // Text node
+      return node.textContent;
+    }
+
+    if(tag === 'br') return '\n';
+
+    // Ordered list — track item numbers
+    if(tag === 'ol') {
+      let num = parseInt(node.getAttribute('start') || '1');
+      for(const child of node.children) {
+        if(child.tagName.toLowerCase() === 'li') {
+          const indent = '  '.repeat(depth);
+          const innerText = walk(child, depth + 1).trim();
+          out += indent + num + '. ' + innerText + '\n';
+          num++;
+        }
+      }
+      return out;
+    }
+
+    // Unordered list
+    if(tag === 'ul') {
+      for(const child of node.children) {
+        if(child.tagName.toLowerCase() === 'li') {
+          const indent = '  '.repeat(depth);
+          const innerText = walk(child, depth + 1).trim();
+          out += indent + '• ' + innerText + '\n';
+        }
+      }
+      return out;
+    }
+
+    // Table row
+    if(tag === 'tr') {
+      const cells = [];
+      for(const cell of node.querySelectorAll('td, th')) {
+        cells.push(cell.textContent.trim());
+      }
+      return cells.join('  |  ') + '\n';
+    }
+
+    // Recurse into children
+    for(const child of node.childNodes) {
+      out += walk(child, depth);
+    }
+
+    // Add newline after block elements
+    if(isBlock && tag !== 'li' && tag !== 'br') {
+      out = out.trim();
+      if(out) out += '\n';
+    }
+
+    return out;
+  }
+
+  let result = walk(div, 0);
+
+  // Clean up: collapse 3+ newlines to 2, trim
+  result = result
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return result;
+}
+
+// Attach paste interceptor to COR fields and policy textareas
+document.addEventListener('paste', function(e) {
+  const target = e.target;
+  if(target.tagName !== 'TEXTAREA') return;
+
+  // Only intercept in COR fields and policy editor textareas
+  const inCor    = target.closest('#panel-course-edit') !== null;
+  const inPolicy = target.closest('.policy-editor-body') !== null;
+  if(!inCor && !inPolicy) return;
+
+  // Only process if clipboard has HTML content worth converting
+  const clipData = e.clipboardData || window.clipboardData;
+  const htmlData = clipData.getData('text/html');
+  if(!htmlData || htmlData.trim() === '') return;
+
+  // Check if HTML has any meaningful structure to preserve
+  const hasStructure = /<(ol|ul|li|p|div|h[1-6]|br|table|tr|td)/i.test(htmlData);
+  if(!hasStructure) return; // let browser handle plain text paste normally
+
+  e.preventDefault();
+
+  const structured = htmlToStructuredText(htmlData);
+
+  // Insert at cursor position
+  const start = target.selectionStart;
+  const end   = target.selectionEnd;
+  const before = target.value.substring(0, start);
+  const after  = target.value.substring(end);
+  target.value = before + structured + after;
+
+  // Move cursor to end of inserted text
+  const newPos = start + structured.length;
+  target.selectionStart = target.selectionEnd = newPos;
+
+  // Trigger oninput so the data model updates
+  target.dispatchEvent(new Event('input', { bubbles: true }));
+
+  // Brief visual flash to confirm rich paste was applied
+  target.classList.add('paste-flash');
+  setTimeout(() => target.classList.remove('paste-flash'), 500);
+}, true);
 
 // ─── EXPORT XLSX ──────────────────────────────────────────────────────────
 function renderExportChecks() {
