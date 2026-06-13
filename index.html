@@ -543,6 +543,31 @@ html.light .lock-card h1{color:var(--text)}
 .cor-lock-status.ok{color:var(--green-txt)}
 html.light .cor-lock-bar{background:rgba(139,28,64,0.05)}
 
+/* ── schedule column manager ────────────────────────────────────────────── */
+.col-manager{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;
+}
+.col-manager-title{
+  font-size:11px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;
+}
+.col-row{
+  display:flex;align-items:center;gap:6px;margin-bottom:6px;
+}
+.col-row:last-child{margin-bottom:0}
+.col-name-input{
+  flex:1;padding:5px 8px;font-size:12px;
+  border:1px solid var(--border2);border-radius:var(--radius);
+  background:var(--bg4);color:var(--text);
+}
+.col-name-input:focus{outline:none;border-color:var(--burg)}
+.col-drag-handle{
+  cursor:grab;color:var(--text3);font-size:13px;padding:0 2px;
+  user-select:none;
+}
+.col-drag-handle:active{cursor:grabbing}
+
 /* ── rich paste indicator ──────────────────────────────────────────────── */
 .paste-flash{
   animation: pasteFlash .5s ease;
@@ -1571,9 +1596,31 @@ function openCourseEdit(id) {
         </div>
 
         <div id="ctab-sched-${id}" style="display:none">
-          <p class="help" style="margin-bottom:10px">✏ All cells editable. Update exam/chapter and project info each semester.</p>
+          <div class="col-manager" id="col-manager-${id}">
+            <div class="col-manager-title">Column Layout</div>
+            <div id="col-rows-${id}">
+              ${c.groupLabels.map((lbl,ci)=>`
+                <div class="col-row" id="col-row-${id}-${ci}" draggable="true"
+                     ondragstart="colDragStart(event,'${id}',${ci})"
+                     ondragover="colDragOver(event)"
+                     ondragleave="colDragLeave(event)"
+                     ondrop="colDrop(event,'${id}',${ci})"
+                     ondragend="colDragEnd(event)">
+                  <span class="col-drag-handle" title="Drag to reorder">⠿</span>
+                  <input class="col-name-input" type="text" value="${lbl}"
+                    oninput="renameCol('${id}',${ci},this.value)"
+                    placeholder="Column name">
+                  <button class="btn-icon danger" onclick="removeCol('${id}',${ci})" title="Remove column">×</button>
+                </div>
+              `).join('')}
+            </div>
+            <div class="flex-gap" style="margin-top:8px">
+              <button class="btn btn-sm" onclick="addCol('${id}')">+ Add Column</button>
+              <span class="help">Drag to reorder · Click name to rename · Max 6 columns</span>
+            </div>
+          </div>
           <div class="sched-wrap">
-            <table class="sched-table">
+            <table class="sched-table" id="sched-table-${id}">
               <thead><tr>${schedHeaders}</tr></thead>
               <tbody>${schedRows}</tbody>
             </table>
@@ -1599,7 +1646,7 @@ function showCTab(id, tab) {
   if(tab === 'sched') setTimeout(initSchedTextareas, 30);
 }
 function cEdit(id, field, val) { const c=COURSES.find(x=>x.id===id); if(c) c[field]=val; }
-function schedEdit(id,ri,ci,val) { const c=COURSES.find(x=>x.id===id); if(c&&c.schedule[ri]) c.schedule[ri].c[ci]=val; }
+function schedEdit(id,ri,ci,val) { const c=COURSES.find(x=>x.id===id); if(c&&c.schedule[ri]) { while(c.schedule[ri].c.length<=ci) c.schedule[ri].c.push(''); c.schedule[ri].c[ci]=val; } }
 function schedDateEdit(id,ri,val) { const c=COURSES.find(x=>x.id===id); if(c&&c.schedule[ri]) c.schedule[ri].dates=val; }
 
 function autoResizeSched(el) {
@@ -1613,6 +1660,88 @@ function initSchedTextareas() {
     autoResizeSched(ta);
   });
 }
+// ─── SCHEDULE COLUMN MANAGEMENT ──────────────────────────────────────────
+function renameCol(id, ci, val) {
+  const c = COURSES.find(x=>x.id===id);
+  if(!c) return;
+  c.groupLabels[ci] = val;
+  // Update just the header cell in the live table
+  const table = document.getElementById('sched-table-'+id);
+  if(table) {
+    const ths = table.querySelectorAll('thead th');
+    // ths[0]=Wk, ths[1]=Dates, ths[2+]=data cols
+    if(ths[ci+2]) ths[ci+2].textContent = val;
+  }
+  scheduleSave();
+}
+
+function addCol(id) {
+  const c = COURSES.find(x=>x.id===id);
+  if(!c || c.groupLabels.length >= 6) return;
+  c.groupLabels.push('New Column');
+  // Add empty cell to every schedule row
+  c.schedule.forEach(row => { row.c.push(''); });
+  c.numGroups = Math.ceil(c.groupLabels.length / 2);
+  openCourseEdit(id);
+  showCTab(id,'sched');
+  scheduleSave();
+}
+
+function removeCol(id, ci) {
+  const c = COURSES.find(x=>x.id===id);
+  if(!c || c.groupLabels.length <= 1) return;
+  if(!confirm("Remove column: " + c.groupLabels[ci] + "? Data in this column will be lost.")) return;
+  c.groupLabels.splice(ci, 1);
+  c.schedule.forEach(row => { row.c.splice(ci, 1); });
+  c.numGroups = Math.ceil(c.groupLabels.length / 2);
+  openCourseEdit(id);
+  showCTab(id,'sched');
+  scheduleSave();
+}
+
+// Column drag-and-drop
+let _colDragSrc = null;
+let _colDragCourseId = null;
+
+function colDragStart(e, id, ci) {
+  _colDragSrc = ci;
+  _colDragCourseId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  requestAnimationFrame(() => e.currentTarget.style.opacity = '.45');
+}
+function colDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.style.background = 'rgba(139,28,64,0.12)';
+  e.currentTarget.style.borderRadius = 'var(--radius)';
+}
+function colDragLeave(e) {
+  e.currentTarget.style.background = '';
+}
+function colDrop(e, id, targetCi) {
+  e.preventDefault();
+  e.currentTarget.style.background = '';
+  if(_colDragSrc === null || _colDragSrc === targetCi || _colDragCourseId !== id) return;
+  const c = COURSES.find(x=>x.id===id);
+  if(!c) return;
+  // Reorder labels
+  const movedLabel = c.groupLabels.splice(_colDragSrc, 1)[0];
+  c.groupLabels.splice(targetCi, 0, movedLabel);
+  // Reorder data in every row
+  c.schedule.forEach(row => {
+    const movedVal = row.c.splice(_colDragSrc, 1)[0];
+    row.c.splice(targetCi, 0, movedVal);
+  });
+  _colDragSrc = null;
+  openCourseEdit(id);
+  showCTab(id,'sched');
+  scheduleSave();
+}
+function colDragEnd(e) {
+  e.currentTarget.style.opacity = '';
+  e.currentTarget.style.background = '';
+  _colDragSrc = null;
+}
+
 function addWeek(id) {
   const c=COURSES.find(x=>x.id===id);
   if(!c) return;
@@ -2030,13 +2159,6 @@ function buildHomepageHTML(c) {
   const projURL = document.getElementById('hp_projects_url').value || '#';
 
   // Build schedule table rows for the HTML output
-  const numCols = c.numGroups===2 ? 4 : 2;
-  const schedHeaders = c.groupLabels.slice(0,numCols).map(g=>`<th style="padding:8px;background:#fcf7f9;text-align:left;border:1px solid #d1d5db">${g}</th>`).join('');
-  const schedRows = c.schedule.map(row=>{
-    const cells = row.c.slice(0,numCols).map(v=>`<td style="padding:8px;vertical-align:top;border:1px solid #d1d5db">${v||''}</td>`).join('');
-    return `<tr><td style="padding:8px;vertical-align:top;border:1px solid #d1d5db">${row.wk}</td><td style="padding:8px;vertical-align:top;border:1px solid #d1d5db">${row.dates}</td>${cells}</tr>`;
-  }).join('');
-
   return `<div style="max-width:1200px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;color:#1f2937;line-height:1.6">
 <div id="main-content" style="border-radius:18px;background:linear-gradient(#ffffff 0%,#fafafa 100%);overflow:hidden;margin-bottom:24px;border:2px solid #d1d5db">
 <div style="padding:26px">
@@ -2075,17 +2197,10 @@ function buildHomepageHTML(c) {
 <div style="flex:1 1 240px;min-width:240px;border-width:8px 2px 2px;border-style:solid;border-color:#9ca3af #d1d5db #d1d5db;border-radius:14px;background:#f9fafb;padding:18px">
 <h3 style="margin:0 0 8px 0;font-size:1.12rem"><a style="color:#8b1c40;text-decoration:underline" href="${projURL}">Lab Projects</a></h3>
 <p style="margin:0">Review project expectations, performance requirements, and lab evaluation standards.</p></div></div></div>
-<div style="margin-bottom:12px"><h2 style="font-size:1.5rem;color:#1f2937;margin-bottom:8px">Weekly Schedule</h2></div>
+<div style="margin-bottom:12px"><h2 style="font-size:1.5rem;color:#1f2937;margin-bottom:8px">Course Schedule / Due Dates</h2></div>
 <div style="overflow-x:auto;margin-bottom:28px">
-<table style="width:100%;border-collapse:collapse">
-<caption style="text-align:left;margin-bottom:8px">${c.code} ${sem} Schedule</caption>
-<thead><tr>
-<th style="padding:8px;background:#fcf7f9;text-align:left;border:1px solid #d1d5db">Week</th>
-<th style="padding:8px;background:#fcf7f9;text-align:left;border:1px solid #d1d5db">Dates</th>
-${schedHeaders}
-</tr></thead>
-<tbody>${schedRows}</tbody>
-</table></div>
+${buildScheduleTableHTML(c,false)}
+</div>
 <div style="border-radius:16px;padding:20px;background:#ffffff;margin-bottom:28px;border:2px solid #d1d5db">
 <h2 style="margin-top:0;font-size:1.5rem;color:#1f2937">Campus Resources</h2>
 <div style="display:flex;flex-wrap:wrap;gap:16px">
