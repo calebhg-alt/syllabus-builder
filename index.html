@@ -1199,7 +1199,7 @@ let COURSES = [
   {
     id:'weld101', code:'WELD101', title:'Welding Fundamentals', units:'2',
     color:'#8B1C40', toolList:'arc',
-    customPolicySet: 'cps_weld_lab',
+    customPolicySet: null,
     prereq:'N/A',
     textbook:'Introduction to Welding — Rupik, Colameco, Kjeldgaard, Ridge, Oostman, Fulton',
     desc:'Designed for the student who does not intend to become employed in the welding industry but desires a background in welding for general education purposes and/or as a supportive course for his/her studies such as automotive mechanics, auto body repair, air conditioning and refrigeration, artistic sculpturing, etc. Instruction is given in the basic techniques of safely operating the Shielded Metal Arc Welding (SMAW) and oxyacetylene welding processes. (CSU, AVC)',
@@ -1231,7 +1231,7 @@ let COURSES = [
   {
     id:'weld212', code:'WELD212', title:'Performance Welding — Arc Welding', units:'4',
     color:'#8DB9CA', toolList:'arc',
-    customPolicySet: 'cps_weld_lab',
+    customPolicySet: null,
     prereq:'Prereq: WELD130, WELD135, WELD137 | Advisory: WELD265',
     textbook:'Modern Welding 13th Ed — Goodheart-Willcox 2023 | ISBN 9781685846565',
     desc:'Designed for the student who seeks employment in the welding industry and has prior training in their selected welding process (SMAW, FCAW, GMAW, or GTAW). Provides advanced instruction with emphasis on preparation for employment and certification. (CSU, AVC)',
@@ -1278,7 +1278,7 @@ let COURSES = [
   {
     id:'weld260', code:'WELD260', title:'Certification Welding — L.A. City', units:'4',
     color:'#4B5563', toolList:'arc',
-    customPolicySet: 'cps_weld_lab',
+    customPolicySet: null,
     prereq:'Prereq: WELD130',
     textbook:'Modern Welding 13th Ed — Goodheart-Willcox 2023 | ISBN 9781685846565\nAlso: AWS D1.1 Structural Welding Code – Steel 2015',
     desc:'Designed for students who seek employment as an L.A. City certified structural steel welder. Provides preparation for the written and performance portions of the Welder Certification Test administered by the L.A. City Dept. of Building and Safety. (CSU, AVC)',
@@ -1293,7 +1293,7 @@ let COURSES = [
   {
     id:'weld265', code:'WELD265', title:'Structural Flux Cored Arc Welding', units:'4',
     color:'#374151', toolList:'arc',
-    customPolicySet: 'cps_weld_lab',
+    customPolicySet: null,
     prereq:'Prereq: WELD130',
     textbook:'Modern Welding 13th Ed — Goodheart-Willcox 2024 | ISBN 9781685846565',
     desc:'Designed for students who seek employment as an L.A. City certified structural steel welder. Provides preparation for the Semi-automatic (FCAW) portion of the Welder Certification Test. (AVC)',
@@ -1384,17 +1384,7 @@ if(!Array.isArray(TOOLS)){
 // ─── CUSTOM POLICY SETS ───────────────────────────────────────────────────
 // Each set: { id, name, policies: [[title, text], ...] }
 // Courses link to a set via customPolicySet field (id or null)
-let CUSTOM_POLICY_SETS = [
-  {
-    id: 'cps_weld_lab',
-    name: 'Welding Lab Requirements',
-    policies: [
-      ['WELDING LAB ATTIRE', '1. Leather work boots required — must extend above the ankle.\n2. FR-rated or natural fiber (cotton/denim) clothing required.\n3. No synthetic materials, cargo pockets, or excessively baggy clothing.\n4. Long hair must be tied back and restrained at all times.\n5. Metallic jewelry is not permitted in the lab.'],
-      ['PERSONAL PROTECTIVE EQUIPMENT', '1. Safety glasses (ANSI Z87) must be worn at all times in the shop, including under welding hoods.\n2. Arc welding helmet with shade #10 lens required for arc processes.\n3. Gas welding goggles with shade #5 flip-up lens required for OAW processes.\n4. FR-rated welding jacket with leather sleeves required.\n5. Leather gloves extending past the wrist required — no synthetic material.'],
-      ['MATERIAL ACCOUNTABILITY', '1. All materials must be checked out through the instructor or instructional assistant.\n2. No metal or material may leave the shop without instructor permission.\n3. Electrodes must be used to the final two (2) inches.\n4. Unused electrodes must be returned to the electrode cabinet.\n5. Scrap material must be placed in designated bins — do not leave scrap around the shop.'],
-    ]
-  },
-];
+let CUSTOM_POLICY_SETS = []; // Instructors build their own — starts blank
 
 let POLICIES = [
   ['GRADING','Submitting all assigned work and passing class quizzes, tests, and exams are essential for the successful completion of this course. Missed exams and assignments generally cannot be made up unless approved by the instructor, required by an approved accommodation, or otherwise required by College policy. Completion of the final examination is required for successful completion.'],
