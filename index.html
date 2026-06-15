@@ -543,6 +543,41 @@ html.light .lock-card h1{color:var(--text)}
 .cor-lock-status.ok{color:var(--green-txt)}
 html.light .cor-lock-bar{background:rgba(139,28,64,0.05)}
 
+/* ── custom policy sets ─────────────────────────────────────────────────── */
+.cps-card{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-lg);margin-bottom:12px;overflow:hidden;
+}
+.cps-card-header{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-bottom:1px solid var(--border);
+}
+.cps-name-input{
+  background:transparent;border:none;font-size:13px;font-weight:600;
+  color:#fff;flex:1;min-width:0;
+}
+.cps-name-input:focus{outline:none;background:var(--yellow);border-radius:3px;padding:0 4px}
+html.light .cps-name-input{color:var(--text)}
+.cps-policy-row{
+  background:var(--bg4);border:1px solid var(--border);
+  border-radius:var(--radius);margin-bottom:6px;overflow:hidden;
+}
+.cps-policy-header{
+  display:flex;align-items:center;gap:8px;padding:6px 10px;
+  border-bottom:1px solid var(--border);
+}
+.cps-policy-header input{
+  flex:1;font-weight:600;color:#fff;background:transparent;
+  border:none;font-size:12px;padding:0;
+}
+.cps-policy-header input:focus{outline:none;background:var(--yellow);border-radius:3px;padding:1px 4px}
+html.light .cps-policy-header input{color:var(--text)}
+.cps-policy-body{padding:8px 10px}
+.cps-policy-body textarea{
+  background:var(--bg3);min-height:55px;font-size:12px;
+  white-space:pre-wrap;
+}
+
 /* ── schedule column manager ────────────────────────────────────────────── */
 .col-manager{
   background:var(--bg3);border:1px solid var(--border);
@@ -670,6 +705,9 @@ html.light .instructor-info strong{color:var(--text)}
       </button>
       <button class="nav-btn" onclick="nav('policies')" id="nav-policies">
         <span class="nav-dot" style="background:#64748b"></span>General Policies
+      </button>
+      <button class="nav-btn" onclick="nav('cps-manage')" id="nav-cps-manage">
+        <span class="nav-dot" style="background:#a78bfa"></span>Custom Policy Sets
       </button>
     </div>
     <div class="nav-section">
@@ -819,6 +857,17 @@ html.light .instructor-info strong{color:var(--text)}
           </div>
           <div id="policy-display"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════ CUSTOM POLICY SETS -->
+    <div id="panel-cps-manage" style="display:none">
+      <div class="card accent-burg">
+        <div class="card-header">
+          <h3>Custom Policy Sets</h3>
+          <button class="btn btn-primary btn-sm" onclick="addCPS()">+ New Set</button>
+        </div>
+        <div class="card-body" id="cps-manage-body"></div>
       </div>
     </div>
 
@@ -1029,6 +1078,7 @@ const DEPT_DEFAULTS = {
       {
         id:'ab101', code:'AB101', title:'Introduction to Auto Body', units:'3',
         color:'#F18A20', toolList:'ab_basic',
+    customPolicySet: null,
         prereq:'N/A',
         textbook:'Auto Body Repair Technology — Duffy, Delmar Publishers',
         desc:'Introduction to auto body repair and refinishing. Topics include safety, hand tools, shop equipment, minor dent repair, surface preparation, and basic refinishing techniques. (CSU, AVC)',
@@ -1042,6 +1092,7 @@ const DEPT_DEFAULTS = {
       {
         id:'ab110', code:'AB110', title:'Collision Repair I', units:'4',
         color:'#F18A20', toolList:'ab_basic',
+    customPolicySet: null,
         prereq:'Prereq: AB101',
         textbook:'Auto Body Repair Technology — Duffy, Delmar Publishers',
         desc:'Fundamentals of collision repair including straightening techniques, panel replacement, welding applications in body repair, and surface preparation for refinishing. (CSU, AVC)',
@@ -1148,6 +1199,7 @@ let COURSES = [
   {
     id:'weld101', code:'WELD101', title:'Welding Fundamentals', units:'2',
     color:'#8B1C40', toolList:'arc',
+    customPolicySet: 'cps_weld_lab',
     prereq:'N/A',
     textbook:'Introduction to Welding — Rupik, Colameco, Kjeldgaard, Ridge, Oostman, Fulton',
     desc:'Designed for the student who does not intend to become employed in the welding industry but desires a background in welding for general education purposes and/or as a supportive course for his/her studies such as automotive mechanics, auto body repair, air conditioning and refrigeration, artistic sculpturing, etc. Instruction is given in the basic techniques of safely operating the Shielded Metal Arc Welding (SMAW) and oxyacetylene welding processes. (CSU, AVC)',
@@ -1179,6 +1231,7 @@ let COURSES = [
   {
     id:'weld212', code:'WELD212', title:'Performance Welding — Arc Welding', units:'4',
     color:'#8DB9CA', toolList:'arc',
+    customPolicySet: 'cps_weld_lab',
     prereq:'Prereq: WELD130, WELD135, WELD137 | Advisory: WELD265',
     textbook:'Modern Welding 13th Ed — Goodheart-Willcox 2023 | ISBN 9781685846565',
     desc:'Designed for the student who seeks employment in the welding industry and has prior training in their selected welding process (SMAW, FCAW, GMAW, or GTAW). Provides advanced instruction with emphasis on preparation for employment and certification. (CSU, AVC)',
@@ -1210,6 +1263,7 @@ let COURSES = [
   {
     id:'weld230', code:'WELD230', title:'Welding Symbols and Print Reading', units:'3',
     color:'#F18A20', toolList:'bp',
+    customPolicySet: null,
     prereq:'Prereq: WELD110 | Advisory: WELD120',
     textbook:'Welding Print Reading 8th Ed — Goodheart-Willcox 2023 | ISBN 9798888170922',
     desc:'Introduction to basic concepts of industrial drawing systems used in the fabrication and erection of welded components. Emphasis on application and interpretation of welding symbols. (CSU, AVC)',
@@ -1224,6 +1278,7 @@ let COURSES = [
   {
     id:'weld260', code:'WELD260', title:'Certification Welding — L.A. City', units:'4',
     color:'#4B5563', toolList:'arc',
+    customPolicySet: 'cps_weld_lab',
     prereq:'Prereq: WELD130',
     textbook:'Modern Welding 13th Ed — Goodheart-Willcox 2023 | ISBN 9781685846565\nAlso: AWS D1.1 Structural Welding Code – Steel 2015',
     desc:'Designed for students who seek employment as an L.A. City certified structural steel welder. Provides preparation for the written and performance portions of the Welder Certification Test administered by the L.A. City Dept. of Building and Safety. (CSU, AVC)',
@@ -1238,6 +1293,7 @@ let COURSES = [
   {
     id:'weld265', code:'WELD265', title:'Structural Flux Cored Arc Welding', units:'4',
     color:'#374151', toolList:'arc',
+    customPolicySet: 'cps_weld_lab',
     prereq:'Prereq: WELD130',
     textbook:'Modern Welding 13th Ed — Goodheart-Willcox 2024 | ISBN 9781685846565',
     desc:'Designed for students who seek employment as an L.A. City certified structural steel welder. Provides preparation for the Semi-automatic (FCAW) portion of the Welder Certification Test. (AVC)',
@@ -1325,6 +1381,21 @@ if(!Array.isArray(TOOLS)){
 }
 
 // AVC standard policies (fixed, exported verbatim)
+// ─── CUSTOM POLICY SETS ───────────────────────────────────────────────────
+// Each set: { id, name, policies: [[title, text], ...] }
+// Courses link to a set via customPolicySet field (id or null)
+let CUSTOM_POLICY_SETS = [
+  {
+    id: 'cps_weld_lab',
+    name: 'Welding Lab Requirements',
+    policies: [
+      ['WELDING LAB ATTIRE', '1. Leather work boots required — must extend above the ankle.\n2. FR-rated or natural fiber (cotton/denim) clothing required.\n3. No synthetic materials, cargo pockets, or excessively baggy clothing.\n4. Long hair must be tied back and restrained at all times.\n5. Metallic jewelry is not permitted in the lab.'],
+      ['PERSONAL PROTECTIVE EQUIPMENT', '1. Safety glasses (ANSI Z87) must be worn at all times in the shop, including under welding hoods.\n2. Arc welding helmet with shade #10 lens required for arc processes.\n3. Gas welding goggles with shade #5 flip-up lens required for OAW processes.\n4. FR-rated welding jacket with leather sleeves required.\n5. Leather gloves extending past the wrist required — no synthetic material.'],
+      ['MATERIAL ACCOUNTABILITY', '1. All materials must be checked out through the instructor or instructional assistant.\n2. No metal or material may leave the shop without instructor permission.\n3. Electrodes must be used to the final two (2) inches.\n4. Unused electrodes must be returned to the electrode cabinet.\n5. Scrap material must be placed in designated bins — do not leave scrap around the shop.'],
+    ]
+  },
+];
+
 let POLICIES = [
   ['GRADING','Submitting all assigned work and passing class quizzes, tests, and exams are essential for the successful completion of this course. Missed exams and assignments generally cannot be made up unless approved by the instructor, required by an approved accommodation, or otherwise required by College policy. Completion of the final examination is required for successful completion.'],
   ['DISAGREEMENT WITH GRADES','Students who believe an assignment has been graded in error must submit a written request via email within ten (10) instructional days of the grade being posted. Requests based solely on effort, attendance, or personal circumstances will not be considered. Exception: Final exam grade disputes must be submitted within 24 hours.'],
@@ -1346,7 +1417,7 @@ let POLICIES = [
 ];
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────
-const ALL_PANELS = ['instructor','grading','policies','courses','course-edit','tool-view','tools-manage','import','homepage','syllabus','export'];
+const ALL_PANELS = ['instructor','grading','policies','cps-manage','courses','course-edit','tool-view','tools-manage','import','homepage','syllabus','export'];
 const TITLES = {
   instructor:'Instructor Information',
   grading:'Grading Policy',
@@ -1362,6 +1433,7 @@ const TITLES = {
   'tool-view':'Tool List',
   'tools-manage':'Manage Tool Lists',
   syllabus:'Canvas Syllabus Generator',
+  'cps-manage':'Custom Policy Sets',
 };
 let currentPanel = 'instructor';
 
@@ -1382,6 +1454,7 @@ function nav(id) {
   if(id==='export') renderExportChecks();
   if(id==='tool-view') {/* rendered before nav */}
   if(id==='tools-manage') renderToolsManage();
+  if(id==='cps-manage') renderCPSManage();
   if(id==='syllabus') initSyllabusGen();
 }
 
@@ -1478,6 +1551,7 @@ function addCourse() {
     title: document.getElementById('nc_title').value.trim(),
     color: document.getElementById('nc_color').value.trim() || '#8B1C40',
     toolList: document.getElementById('nc_toollist').value,
+    customPolicySet: null,
     prereq: document.getElementById('nc_prereq').value.trim(),
     textbook: document.getElementById('nc_textbook').value.trim(),
     desc: document.getElementById('nc_desc').value.trim(),
@@ -1548,6 +1622,12 @@ function openCourseEdit(id) {
           <div class="field-row"><span class="field-label">Tool List</span>
             <select class="tool-list-select" onchange="cEdit('${id}','toolList',this.value)">
               ${TOOLS.map(tl=>`<option value="${tl.id}" ${tl.id===c.toolList?'selected':''}>${tl.name}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field-row"><span class="field-label">Custom Policy Set</span>
+            <select class="cps-select" onchange="cEdit('${id}','customPolicySet',this.value||null)">
+              <option value="">— None —</option>
+              ${CUSTOM_POLICY_SETS.map(cps=>`<option value="${cps.id}" ${cps.id===c.customPolicySet?'selected':''}>${cps.name}</option>`).join('')}
             </select>
           </div>
           <div class="two-col">
@@ -1660,6 +1740,133 @@ function initSchedTextareas() {
     autoResizeSched(ta);
   });
 }
+// ─── CUSTOM POLICY SETS ───────────────────────────────────────────────────
+function getCPSById(id){ return CUSTOM_POLICY_SETS.find(s=>s.id===id); }
+
+function rebuildCPSDropdowns() {
+  document.querySelectorAll('.cps-select').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— None —</option>' +
+      CUSTOM_POLICY_SETS.map(cps =>
+        `<option value="${cps.id}" ${cps.id===cur?'selected':''}>${cps.name}</option>`
+      ).join('');
+  });
+}
+
+function renderCPSManage() {
+  const body = document.getElementById('cps-manage-body');
+  if(!body) return;
+  if(!CUSTOM_POLICY_SETS.length) {
+    body.innerHTML = '<p style="color:var(--text3);font-size:13px">No custom policy sets yet. Click + New Set to create one.</p>';
+    return;
+  }
+  body.innerHTML = CUSTOM_POLICY_SETS.map((cps,si) => `
+    <div class="cps-card">
+      <div class="cps-card-header">
+        <input class="cps-name-input" type="text" value="${cps.name.replace(/"/g,'&quot;')}"
+          oninput="getCPSById('${cps.id}').name=this.value;rebuildCPSDropdowns();scheduleSave()"
+          placeholder="Policy set name">
+        <span class="badge badge-gray">${cps.policies.length} policies</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteCPS('${cps.id}')">Delete Set</button>
+      </div>
+      <div style="padding:10px 14px">
+        <div id="cps-policies-${cps.id}">
+          ${cps.policies.map(([t,txt],pi) => `
+            <div class="cps-policy-row">
+              <div class="cps-policy-header">
+                <span class="drag-handle" title="Drag to reorder">⠿</span>
+                <input type="text" value="${t.replace(/"/g,'&quot;')}"
+                  oninput="getCPSById('${cps.id}').policies[${pi}][0]=this.value;scheduleSave()"
+                  placeholder="Policy title">
+                <button class="btn-icon danger" onclick="deleteCPSPolicy('${cps.id}',${pi})" title="Delete">×</button>
+              </div>
+              <div class="cps-policy-body">
+                <textarea rows="4"
+                  style="white-space:pre-wrap"
+                  oninput="getCPSById('${cps.id}').policies[${pi}][1]=this.value;scheduleSave()"
+                  placeholder="Enter each point on its own line:&#10;1. First point&#10;2. Second point"
+                >${txt}</textarea>
+                <p style="font-size:10px;color:var(--text3);margin:3px 0 0;font-style:italic">Each line becomes a separate paragraph in the syllabus.</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-sm" style="margin-top:8px" onclick="addCPSPolicy('${cps.id}')">+ Add Policy</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addCPS() {
+  const id = 'cps_' + Date.now();
+  CUSTOM_POLICY_SETS.push({ id, name: 'New Policy Set', policies: [['POLICY TITLE', 'Enter policy text here.']] });
+  rebuildCPSDropdowns();
+  renderCPSManage();
+  scheduleSave();
+}
+
+function deleteCPS(id) {
+  if(!confirm('Delete this policy set? Courses using it will have no custom policies.')) return;
+  CUSTOM_POLICY_SETS = CUSTOM_POLICY_SETS.filter(s=>s.id!==id);
+  // Clear from any courses using it
+  COURSES.forEach(c=>{ if(c.customPolicySet===id) c.customPolicySet=null; });
+  rebuildCPSDropdowns();
+  renderCPSManage();
+  scheduleSave();
+}
+
+function addCPSPolicy(cpsId) {
+  const cps = getCPSById(cpsId);
+  if(!cps) return;
+  cps.policies.push(['NEW POLICY', 'Enter policy text here.']);
+  renderCPSManage();
+  scheduleSave();
+}
+
+function deleteCPSPolicy(cpsId, pi) {
+  const cps = getCPSById(cpsId);
+  if(!cps) return;
+  cps.policies.splice(pi, 1);
+  renderCPSManage();
+  scheduleSave();
+}
+
+function getCustomPoliciesHTML(c, forPrint) {
+  if(!c.customPolicySet) return '';
+  const cps = getCPSById(c.customPolicySet);
+  if(!cps || !cps.policies.length) return '';
+  const sectionStyle = forPrint
+    ? 'margin-bottom:12px;page-break-inside:avoid'
+    : 'background:#f4fafc;padding:18px;margin-bottom:18px;border:2px solid #8db9ca';
+  const sectionTitleStyle = forPrint
+    ? 'font-size:14pt;font-weight:700;color:#8b1c40;margin:0 0 8px;border-bottom:1pt solid #d1d5db;padding-bottom:4px'
+    : 'margin-top:0;font-size:1.3rem;color:#1f2937;margin-bottom:10px';
+  const policyStyle = forPrint
+    ? 'margin-bottom:10px;page-break-inside:avoid'
+    : 'margin-bottom:12px';
+  const titleStyle = forPrint
+    ? 'font-size:11pt;font-weight:700;color:#8b1c40;margin:0 0 4px'
+    : 'font-size:.95rem;font-weight:700;color:#8b1c40;margin:0 0 4px';
+
+  const policiesHTML = cps.policies.map(([t,txt]) => `
+    <div style="${policyStyle}">
+      <p style="${titleStyle}">${t}</p>
+      ${formatPolicyText(txt, forPrint)}
+    </div>
+  `).join('');
+
+  if(forPrint) {
+    return `<div style="${sectionStyle}">
+      <h2 style="${sectionTitleStyle}">${cps.name}</h2>
+      ${policiesHTML}
+    </div>`;
+  }
+  return `<div style="${sectionStyle}">
+    <h2 style="${sectionTitleStyle}">${cps.name}</h2>
+    ${policiesHTML}
+  </div>`;
+}
+
 // ─── SCHEDULE COLUMN MANAGEMENT ──────────────────────────────────────────
 function renameCol(id, ci, val) {
   const c = COURSES.find(x=>x.id===id);
@@ -2486,6 +2693,7 @@ ${getToolListHTML(c,false)}
 ${buildScheduleTableHTML(c,false)}
 </div>
 ${getPoliciesHTML(false)}
+${getCustomPoliciesHTML(c,false)}
 <div style="margin-top:28px;border-top:2px solid #d1d5db;padding-top:16px">
 <p style="margin:0;font-size:.92rem;color:#4b5563">${c.code} — ${sem} | Antelope Valley College | <a href="https://www.avc.edu" style="color:#8b1c40">avc.edu</a></p>
 <p style="margin:6px 0 0;font-size:.92rem;color:#4b5563">This syllabus is subject to change. All students will be notified of the changes.</p>
@@ -2564,6 +2772,7 @@ ${getToolListHTML(c,true)}
 <h2>Course Schedule / Due Dates</h2>
 ${buildScheduleTableHTML(c,true)}
 ${getPoliciesHTML(true)}
+${getCustomPoliciesHTML(c,true)}
 <div class="footer">
 <p>${c.code} — ${c.title} | ${sem} | Antelope Valley College | This syllabus is subject to change. All students will be notified of the changes.</p>
 </div>
@@ -2708,6 +2917,12 @@ function renderExportChecks() {
       <input type="checkbox" checked onchange="toggleCheck(this,'cl-tl-${tl.id}')"> ${tl.name}
     </label>
   `).join('');
+  const cpsel = document.getElementById('export-cps-checks');
+  if(cpsel) cpsel.innerHTML = CUSTOM_POLICY_SETS.map(cps=>`
+    <label class="check-label checked" id="cl-cps-${cps.id}">
+      <input type="checkbox" checked onchange="toggleCheck(this,'cl-cps-${cps.id}')"> ${cps.name}
+    </label>
+  `).join('') || '<p style="font-size:12px;color:var(--text3)">No custom policy sets created yet.</p>';
 }
 function toggleCheck(cb, id) {
   document.getElementById(id).classList.toggle('checked', cb.checked);
@@ -2874,6 +3089,7 @@ function saveAll() {
     courses: COURSES,
     tools: TOOLS,
     policies: POLICIES,
+    customPolicySets: CUSTOM_POLICY_SETS,
     instructors: INSTRUCTORS || [],
     activeInstructorId: activeInstructorId || null,
     formFields: getFormFields(),
@@ -2893,6 +3109,7 @@ function loadDeptData(dept) {
       if(payload.tools    && Array.isArray(payload.tools))    TOOLS    = payload.tools;
       if(payload.policies && Array.isArray(payload.policies)) POLICIES = payload.policies;
       if(payload.instructors) INSTRUCTORS = payload.instructors;
+      if(payload.customPolicySets && Array.isArray(payload.customPolicySets)) CUSTOM_POLICY_SETS = payload.customPolicySets;
       if(payload.activeInstructorId) activeInstructorId = payload.activeInstructorId;
       if(payload.formFields) window._pendingFormFields = payload.formFields;
       return payload.savedAt || true;
