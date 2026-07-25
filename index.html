@@ -1009,6 +1009,10 @@ html.light .instructor-info strong{color:var(--text)}
             </div>
           </div>
           <div class="code-block" id="syl-code-preview"></div>
+          <div class="flex-gap" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" id="syl-ack-btn" onclick="openAckURL()">📝 Syllabus Acknowledgement</button>
+            <span id="syl-ack-status" style="font-size:12px;color:var(--muted)"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1084,7 +1088,7 @@ const DEPT_DEFAULTS = {
         desc:'Introduction to auto body repair and refinishing. Topics include safety, hand tools, shop equipment, minor dent repair, surface preparation, and basic refinishing techniques. (CSU, AVC)',
     objectives:'1. Demonstrate safe work practices in the auto body shop environment.\n2. Identify and properly use basic auto body hand tools and shop equipment.\n3. Perform minor dent repair and surface preparation to industry standards.\n4. Apply body filler and perform basic sanding techniques.\n5. Prepare surfaces for refinishing using proper masking techniques.',
         slos:'1. Demonstrate safe work practices in the auto body shop environment.\n2. Identify and properly use basic auto body hand tools and shop equipment.\n3. Perform minor dent repair and surface preparation to industry standards.',
-        crn:'', days:'', times:'', room:'', start:'', end:'',
+        crn:'', days:'', times:'', room:'', start:'', end:'', ackurl:'',
         numGroups:1,
         groupLabels:['Exam / Chapter','Project / Assignment Due'],
         schedule: Array.from({length:16},(_,i)=>({wk:i+1,dates:'Week '+(i+1),c:[i===0?'Safety / Orientation':i===7?'MIDTERM':i===15?'FINAL':'',' ']}))
@@ -1098,7 +1102,7 @@ const DEPT_DEFAULTS = {
         desc:'Fundamentals of collision repair including straightening techniques, panel replacement, welding applications in body repair, and surface preparation for refinishing. (CSU, AVC)',
     objectives:'1. Demonstrate safe welding and cutting operations in a body shop environment.\n2. Perform structural and non-structural panel repair to industry standards.\n3. Replace exterior body panels following manufacturer specifications.\n4. Prepare repaired surfaces for refinishing.\n5. Identify and correct common collision damage using straightening techniques.',
         slos:'1. Demonstrate safe welding and cutting operations in a body shop environment.\n2. Perform structural and non-structural panel repair and replacement to industry standards.',
-        crn:'', days:'', times:'', room:'', start:'', end:'',
+        crn:'', days:'', times:'', room:'', start:'', end:'', ackurl:'',
         numGroups:1,
         groupLabels:['Exam / Chapter','Project / Assignment Due'],
         schedule: Array.from({length:16},(_,i)=>({wk:i+1,dates:'Week '+(i+1),c:[i===0?'Safety Test':i===7?'MIDTERM':i===15?'FINAL':'',' ']}))
@@ -1206,7 +1210,7 @@ let COURSES = [
     objectives:'1. Demonstrate safe work practices at all times.\n2. Analyze the setup and operation of the oxy-acetylene equipment used in the OAW process.\n3. Analyze the setup and operation of the SMAW equipment.\n4. Analyze welding equipment from the consumer point of view as to cost and maintenance.\n5. Explain significance of open circuit voltage, closed circuit voltage, and duty cycle rating of arc.\n6. Explain the significance of welding polarities and magnetic arc blow.\n7. Read and interpret the AWS numbering system of identifying mild and low alloy steel electrodes.\n8. Discuss the operating characteristics of the four electrode groups.\n9. Read and interpret the five different kinds of joints as defined by the AWS.\n10. Weld butt joint square groove weld, and tee joint-fillet weld using OAW and SMAW processes.\n11. Apply skills to make a butt joint-square groove weld using the braze welding process.',
     slos:'1. Construct, inspect, and analyze five basic welded joints from mild steel.\n2. Construct, inspect and analyze three basic brazed joints on mild steel.\n3. Demonstrate, inspect, and analyze basic cutting techniques using a hand cutting torch.',
     outline:'1. Orientation and Safety\n1.1 Shop Guidelines and Procedures\n1.2 Safety Instruction\n1.3 Safety Test\n2. Oxy-Acetylene Welding Terminology and Techniques\n3. Oxy-Acetylene Welding Equipment and Techniques\n4. Brazing, Braze Welding and Techniques\n5. Oxy-Acetylene Cutting and Techniques\n6. Arc Welding Terminology and Techniques\n7. Arc Welding Equipment and Techniques\n8. Arc Welding Electrodes and Techniques\n9. Course Review',
-    crn:'', days:'Thursday', times:'', room:'', start:'08/21/2026', end:'12/12/2026',
+    crn:'', days:'Thursday', times:'', room:'', start:'08/21/2026', end:'12/12/2026', ackurl:'',
     numGroups:2,
     groupLabels:['Group 1: Exam / Chapter','Group 1: Project Due','Group 2: Exam / Chapter','Group 2: Project Due'],
     schedule: [
@@ -1238,7 +1242,7 @@ let COURSES = [
     objectives:'1. Demonstrate safe work practices at all times.\n2. Analyze the setup and operation of the selected process (SMAW, FCAW, GMAW, or GTAW).\n3. Evaluate the type of equipment and components for the selected process.\n4. Discuss the advantages and disadvantages of SMAW, FCAW, GMAW, or GTAW equipment.\n5. Read and interpret in depth the AWS welding symbol system according to specific code requirements.\n6. Read and interpret the AWS numbering system of identifying welding electrodes.\n7. Produce groove welds in the vertical and overhead positions to AWS D1.1 standards.',
     slos:'1. Demonstrate, construct, inspect and analyze welded joints to an advanced level using AWS specification.\n2. Read, interpret, and analyze in depth the AWS welding symbol system according to specific code requirements.',
     outline:'1. Orientation and Safety\n2. Process-Specific Equipment Setup and Operation\n3. Advanced Welding Techniques — Selected Process\n4. AWS D1.1 Code Requirements\n5. Joint and Weld Symbol Interpretation\n6. Certification Preparation\n7. Course Review',
-    crn:'', days:'Monday / Wednesday', times:'', room:'', start:'08/17/2026', end:'12/12/2026',
+    crn:'', days:'Monday / Wednesday', times:'', room:'', start:'08/17/2026', end:'12/12/2026', ackurl:'',
     numGroups:2,
     groupLabels:['Mon Section: Exam/Chapter','Mon Section: Project Due','Wed Section: Exam/Chapter','Wed Section: Project Due'],
     schedule: [
@@ -1270,7 +1274,7 @@ let COURSES = [
     objectives:'1. Interpret and describe what is shown on elementary welding industry blueprints.\n2. Construct basic industry blueprints using drafting tools or CAD software.\n3. Interpret and describe the type of weld called for in a blueprint.\n4. Interpret and describe the type of weld joint and placement called for in a blueprint.\n5. Interpret and describe the different welding processes that can be applied to a welded joint.\n6. Read, interpret and understand the five different kinds of joints as defined by the AWS.',
     slos:'1. Use, apply, and operate drafting tools and equipment to industry standards.\n2. Define, name, translate, identify, and interpret welding symbols and industrial drawings.',
     outline:'1. Orientation\n1.1 Guidelines and Procedures\n2. Joints, Welds, and Weld Defects\n3. Welding Symbol Interpretation\n4. Blueprint Reading\n5. Drafting Tools and Techniques\n6. Course Review',
-    crn:'', days:'', times:'', room:'', start:'', end:'',
+    crn:'', days:'', times:'', room:'', start:'', end:'', ackurl:'',
     numGroups:1,
     groupLabels:['Exam / Chapter','Project / Assignment Due'],
     schedule: Array.from({length:16},(_,i)=>({wk:i+1,dates:`Week ${i+1}`,c:[i===0?'Safety / Orientation':i===7?'MIDTERM':i===15?'FINAL':'',' ']}))
@@ -1285,7 +1289,7 @@ let COURSES = [
     objectives:'1. Demonstrate safe work practices at all times.\n2. Identify the provisions and requirements of the L.A. City Building Code as they relate to welded structures.\n3. Pass a written welder qualification test similar to the one administered by L.A. City Dept. of Building and Safety.\n4. Read and interpret the five different kinds of joints as defined by the AWS.\n5. Read and interpret in depth the AWS Welding Symbol system.\n6. Read and interpret the AWS numbering system of identifying welding electrodes.\n7. Explain the operating characteristics and limitations of the four F-groups.\n8. Produce groove welds in vertical and overhead positions to AWS D1.1 specifications.\n9. Pass the practical welding performance test similar to L.A. City certification requirements.',
     slos:'1. Construct, weld, inspect, and analyze test plates to meet the L.A. City Welder Certification Test.\n2. Define, recognize, and interpret the written portion of the Welder Certification Test.',
     outline:'1. Orientation and Safety\n2. L.A. City Building Code Requirements\n3. AWS D1.1 Structural Welding Code\n4. Advanced SMAW Techniques — Vertical and Overhead\n5. Test Plate Preparation and Welding\n6. Written Exam Preparation\n7. Performance Exam Preparation\n8. Course Review',
-    crn:'', days:'', times:'', room:'', start:'', end:'',
+    crn:'', days:'', times:'', room:'', start:'', end:'', ackurl:'',
     numGroups:1,
     groupLabels:['Exam / Chapter','Project / Assignment Due'],
     schedule: Array.from({length:16},(_,i)=>({wk:i+1,dates:`Week ${i+1}`,c:[i===0?'Safety Test':i===7?'MIDTERM':i===15?'FINAL — Performance Welding Exam':'',' ']}))
@@ -1300,7 +1304,7 @@ let COURSES = [
     objectives:'1. Demonstrate safe work practices at all times.\n2. Identify the provisions and requirements of the L.A. City Building Code as they relate to FCAW structures.\n3. Pass a practical FCAW welding qualification test similar to L.A. City certification.\n4. Read and interpret the five different kinds of joints as defined by the AWS.\n5. Read and interpret in depth the AWS Welding Symbol system.\n6. Read and interpret the AWS numbering system of identifying FCAW electrodes.\n7. Produce groove welds in vertical and overhead positions to industry standards using FCAW.',
     slos:'1. Construct, weld, inspect, and analyze test plates to meet the L.A. City Welder Certification Test.\n2. Define, recognize, and interpret the written portion of the Welder Certification Test.',
     outline:'1. Orientation and Safety\n2. FCAW Equipment Setup and Operation\n3. Advanced FCAW Techniques\n4. L.A. City Code Requirements — FCAW\n5. Test Plate Preparation\n6. Performance Exam Preparation\n7. Course Review',
-    crn:'', days:'', times:'', room:'', start:'', end:'',
+    crn:'', days:'', times:'', room:'', start:'', end:'', ackurl:'',
     numGroups:1,
     groupLabels:['Exam / Chapter','Project / Assignment Due'],
     schedule: Array.from({length:16},(_,i)=>({wk:i+1,dates:`Week ${i+1}`,c:[i===0?'Safety Test':i===7?'MIDTERM':i===15?'FINAL — Performance Welding Exam':'',' ']}))
@@ -1548,7 +1552,7 @@ function addCourse() {
     objectives: document.getElementById('nc_objectives') ? document.getElementById('nc_objectives').value.trim() : '',
     slos: document.getElementById('nc_slos').value.trim(),
     outline: document.getElementById('nc_outline') ? document.getElementById('nc_outline').value.trim() : '',
-    crn:'', days:'', times:'', room:'', start:'', end:'',
+    crn:'', days:'', times:'', room:'', start:'', end:'', ackurl:'',
     numGroups, groupLabels,
     schedule: Array.from({length:numWeeks},(_,i)=>({
       wk:i+1, dates:`Week ${i+1}`,
@@ -1628,6 +1632,7 @@ function openCourseEdit(id) {
             <div class="field-row"><span class="field-label">Start Date</span><input type="text" class="editable" value="${c.start}" oninput="cEdit('${id}','start',this.value)"></div>
             <div class="field-row"><span class="field-label">End Date</span><input type="text" class="editable" value="${c.end}" oninput="cEdit('${id}','end',this.value)"></div>
           </div>
+          <div class="field-row"><span class="field-label">Acknowledgement URL</span><input type="text" class="editable" value="${c.ackurl}" oninput="cEdit('${id}','ackurl',this.value)" placeholder="Canvas quiz/assignment link students click to acknowledge the syllabus"></div>
           <p class="help">🟡 Yellow fields — update each semester</p>
         </div>
 
@@ -2452,6 +2457,19 @@ function updateSyllabusPreview() {
   if(pre) pre.textContent = html;
   const iframe = document.getElementById('syl-preview-iframe');
   if(iframe && document.getElementById('syl-preview-wrap').style.display!=='none') iframe.srcdoc = html;
+  const ackStatus = document.getElementById('syl-ack-status');
+  if(ackStatus) ackStatus.textContent = '';
+}
+
+function openAckURL() {
+  const id = document.getElementById('syl_course')?.value;
+  const c = id ? COURSES.find(x=>x.id===id) : null;
+  if(!c || !c.ackurl) {
+    const s = document.getElementById('syl-ack-status');
+    if(s) s.textContent = 'No acknowledgement URL set for this course — add one in the course editor.';
+    return;
+  }
+  window.open(c.ackurl, '_blank', 'noopener');
 }
 
 function toggleSyllabusPreview() {
@@ -2691,6 +2709,11 @@ ${buildScheduleTableHTML(c,false)}
 </div>
 ${getCustomPoliciesHTML(c,false)}
 ${getPoliciesHTML(false)}
+${c.ackurl?`<div style="background:#fcf7f9;padding:22px;margin-bottom:18px;border:2px solid #8b1c40;text-align:center">
+<h2 style="margin-top:0;color:#1f2937">Syllabus Acknowledgement</h2>
+<p>By clicking below, you confirm that you have read and understood this syllabus, including all course policies.</p>
+<a href="${c.ackurl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;padding:12px 28px;background:#8b1c40;color:#ffffff;font-weight:bold;text-decoration:none;border-radius:4px">Syllabus Acknowledgement</a>
+</div>`:''}
 <div style="margin-top:28px;border-top:2px solid #d1d5db;padding-top:16px">
 <p style="margin:0;font-size:.92rem;color:#4b5563">${c.code} — ${sem} | Antelope Valley College | <a href="https://www.avc.edu" style="color:#8b1c40">avc.edu</a></p>
 <p style="margin:6px 0 0;font-size:.92rem;color:#4b5563">This syllabus is subject to change. All students will be notified of the changes.</p>
@@ -2771,6 +2794,11 @@ ${getToolListHTML(c,true)}
 ${buildScheduleTableHTML(c,true)}
 ${getCustomPoliciesHTML(c,true)}
 ${getPoliciesHTML(true)}
+${c.ackurl?`<div class="box box-burg" style="text-align:center;padding:16px;margin-bottom:12px">
+<h3 style="margin-top:0">Syllabus Acknowledgement</h3>
+<p>By clicking below, you confirm that you have read and understood this syllabus, including all course policies.</p>
+<a href="${c.ackurl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:10px 24px;background:#8b1c40;color:#ffffff;font-weight:bold;text-decoration:none;border-radius:4px">Syllabus Acknowledgement</a>
+</div>`:''}
 <div class="footer">
 <p>${c.code} — ${c.title} | ${sem} | Antelope Valley College | This syllabus is subject to change. All students will be notified of the changes.</p>
 </div>
