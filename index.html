@@ -2517,6 +2517,19 @@ function gv(id) {
   return '';
 }
 
+function looksLikeListLine(line) {
+  return /^\s*(\d+[\.\)]|[a-zA-Z][\.\)]|[-•*])\s+/.test(line);
+}
+
+// WCAG-compliant alt text: trims to <=120 chars without cutting mid-word.
+// Use this any time an <img> is added to an export so alt text stays compliant.
+function buildAltText(desc, maxLen=120) {
+  const clean = (desc||'').replace(/\s+/g,' ').trim();
+  if(clean.length <= maxLen) return clean;
+  const cut = clean.slice(0, maxLen);
+  return cut.slice(0, cut.lastIndexOf(' ')) + '…';
+}
+
 function formatPolicyText(txt, forPrint) {
   // Split on real newlines, render each non-empty line as its own paragraph
   const lines = txt.split('\n').filter(l => l.trim());
@@ -2525,7 +2538,20 @@ function formatPolicyText(txt, forPrint) {
     const s = forPrint ? 'font-size:11px;line-height:1.5;margin:0 0 2px' : 'margin:0 0 4px;font-size:.93rem;line-height:1.5';
     return `<p style="${s}">${txt}</p>`;
   }
-  // Multiple lines — each gets its own paragraph, indented if it starts with a number sub-point
+  // If most lines carry explicit list markers (1. / a. / - / •), this is a real
+  // list — render as semantic <ol>/<ul> so screen readers announce it correctly.
+  const markerLines = lines.filter(looksLikeListLine);
+  if(markerLines.length >= Math.ceil(lines.length * 0.6)) {
+    const isOrdered = /^\s*\d+[\.\)]/.test(markerLines[0]);
+    const tag = isOrdered ? 'ol' : 'ul';
+    const liStyle = forPrint ? 'font-size:11px;line-height:1.5;margin:1px 0' : 'margin:2px 0;font-size:.93rem;line-height:1.5';
+    const items = lines.map(line => {
+      const stripped = line.replace(/^\s*(\d+[\.\)]|[a-zA-Z][\.\)]|[-•*])\s+/, '').trim();
+      return `<li style="${liStyle}">${stripped}</li>`;
+    }).join('');
+    return `<${tag} style="margin:0 0 4px;padding-left:1.4em">${items}</${tag}>`;
+  }
+  // Multiple lines, not a list — each gets its own paragraph, indented if it starts with a number sub-point
   return lines.map(line => {
     const isSub = /^[\s]*[a-z][\.\)]|^[\s]*[ivxIVX]+[\.\)]|^\s+/.test(line);
     const indent = isSub ? 'padding-left:14px;' : '';
@@ -2555,9 +2581,10 @@ function getToolListHTML(c, forPrint) {
   const tl = TOOLS.find(t=>t.id===c.toolList);
   if(!tl) return '';
   const itemStyle = forPrint ? 'font-size:11px;margin:2px 0' : 'font-size:.93rem;margin:4px 0';
-  const items = tl.items.map((it,i)=>`<p style="${itemStyle}">${i+1}. ${it.item}${it.note?' <em>('+it.note+')</em>':''}</p>`).join('');
-  if(forPrint) return `<div style="page-break-inside:avoid;margin-bottom:12px"><h3 style="font-size:13px;font-weight:700;color:#8b1c40;margin-bottom:6px">${tl.name}</h3>${items}</div>`;
-  return `<div style="background:#fff8f1;padding:18px;margin-bottom:18px;border:2px solid #f18a20"><h2 style="margin-top:0;color:#1f2937">${tl.name}</h2><p style="margin:0 0 10px;font-size:.93rem">Used for: ${tl.usedFor}. Students can expect to spend approximately $250 on the complete list with entry level equipment.</p>${items}</div>`;
+  const items = tl.items.map(it=>`<li style="${itemStyle}">${it.item}${it.note?' <em>('+it.note+')</em>':''}</li>`).join('');
+  const list = `<ol style="margin:0;padding-left:1.4em">${items}</ol>`;
+  if(forPrint) return `<div style="page-break-inside:avoid;margin-bottom:12px"><h3 style="font-size:13px;font-weight:700;color:#8b1c40;margin-bottom:6px">${tl.name}</h3>${list}</div>`;
+  return `<div style="background:#fff8f1;padding:18px;margin-bottom:18px;border:2px solid #f18a20"><h2 style="margin-top:0;color:#1f2937">${tl.name}</h2><p style="margin:0 0 10px;font-size:.93rem">Used for: ${tl.usedFor}. Students can expect to spend approximately $250 on the complete list with entry level equipment.</p>${list}</div>`;
 }
 
 function buildScheduleTableHTML(c, forPrint) {
@@ -2567,10 +2594,10 @@ function buildScheduleTableHTML(c, forPrint) {
   const thStyle = forPrint
     ? 'padding:4px 6px;background:#8b1c40;color:#fff;text-align:left;font-size:9pt;border:1px solid #ccc'
     : 'padding:8px;background:#8b1c40;color:#fff;text-align:left;border:1px solid #d1d5db';
-  const wkTh   = `<th style="${thStyle};width:30px">Wk</th>`;
-  const dateTh = `<th style="${thStyle};min-width:${forPrint?'130px':'180px'}">Dates</th>`;
+  const wkTh   = `<th scope="col" style="${thStyle};width:30px">Wk</th>`;
+  const dateTh = `<th scope="col" style="${thStyle};min-width:${forPrint?'130px':'180px'}">Dates</th>`;
   const groupThs = c.groupLabels.slice(0, numCols)
-    .map(g => `<th style="${thStyle}">${g}</th>`).join('');
+    .map(g => `<th scope="col" style="${thStyle}">${g}</th>`).join('');
 
   // Row builder — newlines in cells become <br> tags
   const tdBase = forPrint
@@ -2605,8 +2632,12 @@ function buildScheduleTableHTML(c, forPrint) {
   const tableStyle = forPrint
     ? 'width:100%;border-collapse:collapse;margin-bottom:14px;page-break-inside:auto'
     : 'width:100%;border-collapse:collapse';
+  const captionStyle = forPrint
+    ? 'caption-side:top;text-align:left;font-weight:700;font-size:10pt;padding:0 0 4px;color:#1f2937'
+    : 'caption-side:top;text-align:left;font-weight:700;padding:0 0 6px;color:#1f2937';
 
   return `<table style="${tableStyle}">
+    <caption style="${captionStyle}">Schedule of exams and projects due this semester</caption>
     <thead><tr>${wkTh}${dateTh}${groupThs}</tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -2776,13 +2807,13 @@ ${c.objectives?`<h2>Course Objectives</h2>${getObjectivesHTML(c,true)}`:''}
 ${getSLOsHTML(c,true)}
 ${c.outline?`<h2>Course Outline</h2>${getOutlineHTML(c,true)}`:''}
 <h2>Grading</h2>
-<table><thead><tr><th>Category</th><th>Weight</th></tr></thead><tbody>
+<table><caption style="caption-side:top;text-align:left;font-weight:700">Grade breakdown by category</caption><thead><tr><th scope="col">Category</th><th scope="col">Weight</th></tr></thead><tbody>
 <tr><td>Homework</td><td>${gHW}%</td></tr>
 <tr><td>Projects</td><td>${gProj}%</td></tr>
 <tr><td>Exams</td><td>${gExam}%</td></tr>
 <tr><td>Participation / Shop Clean-Up</td><td>${gPart}%</td></tr>
 </tbody></table>
-<table><thead><tr><th>Grade</th><th>Minimum %</th></tr></thead><tbody>
+<table><caption style="caption-side:top;text-align:left;font-weight:700">Letter grade minimum percentages</caption><thead><tr><th scope="col">Grade</th><th scope="col">Minimum %</th></tr></thead><tbody>
 <tr><td>A</td><td>${gA}%</td></tr><tr><td>B</td><td>${gB}%</td></tr>
 <tr><td>C</td><td>${gC}%</td></tr><tr><td>D</td><td>${gD}%</td></tr>
 <tr><td>F</td><td>${gF}%</td></tr>
