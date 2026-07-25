@@ -2366,13 +2366,17 @@ function buildHomepageHTML(c) {
 </div></div>
 <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:28px">
 <div style="flex:1 1 220px;min-width:220px;border-width:8px 2px 2px;border-style:solid;border-color:#8db9ca #d1d5db #d1d5db;border-radius:14px;background:#f4fafc;padding:18px">
-<h3 style="margin:0 0 8px 0;font-size:1.12rem">Schedule</h3><p style="margin:0">${c.days||'See Canvas'}</p></div>
+<h3 style="margin:0 0 8px 0;font-size:1.12rem">Schedule</h3><p style="margin:0">${c.days||'See Canvas'}${c.times?' &middot; '+c.times:''}</p></div>
 <div style="flex:1 1 220px;min-width:220px;border-width:8px 2px 2px;border-style:solid;border-color:#f18a20 #d1d5db #d1d5db;border-radius:14px;background:#fff8f1;padding:18px">
 <h3 style="margin:0 0 8px 0;font-size:1.12rem">Units</h3><p style="margin:0">${c.units}</p></div>
 <div style="flex:1 1 220px;min-width:220px;border-width:8px 2px 2px;border-style:solid;border-color:#8db9ca #d1d5db #d1d5db;border-radius:14px;background:#f4fafc;padding:18px">
 <h3 style="margin:0 0 8px 0;font-size:1.12rem">Semester</h3><p style="margin:0">${sem}</p></div>
 <div style="flex:1 1 220px;min-width:220px;border-width:8px 2px 2px;border-style:solid;border-color:#8b1c40 #d1d5db #d1d5db;border-radius:14px;background:#fcf7f9;padding:18px">
-<h3 style="margin:0 0 8px 0;font-size:1.12rem">Prerequisites</h3><p style="margin:0">${c.prereq}</p></div></div>
+<h3 style="margin:0 0 8px 0;font-size:1.12rem">Prerequisites</h3><p style="margin:0">${c.prereq}</p></div>
+<div style="flex:1 1 220px;min-width:220px;border-width:8px 2px 2px;border-style:solid;border-color:#f18a20 #d1d5db #d1d5db;border-radius:14px;background:#fff8f1;padding:18px">
+<h3 style="margin:0 0 8px 0;font-size:1.12rem">CRN / Room</h3><p style="margin:0">${c.crn||'TBD'} &nbsp;/&nbsp; ${c.room||'TBD'}</p></div>
+<div style="flex:1 1 220px;min-width:220px;border-width:8px 2px 2px;border-style:solid;border-color:#8b1c40 #d1d5db #d1d5db;border-radius:14px;background:#fcf7f9;padding:18px">
+<h3 style="margin:0 0 8px 0;font-size:1.12rem">Course Dates</h3><p style="margin:0">${c.start||'TBD'} &ndash; ${c.end||'TBD'}</p></div></div>
 <div style="border-radius:16px;padding:20px;background:#ffffff;margin-bottom:28px;border:2px solid #d1d5db">
 <h2 style="margin-top:0;font-size:1.5rem;color:#1f2937">Instructor &amp; Emergency Contact</h2>
 <div style="display:flex;flex-wrap:wrap;gap:16px">
@@ -2643,7 +2647,10 @@ function buildSyllabusCanvasHTML(c) {
 <p><strong>Phone:</strong> ${phone}</p>
 <p><strong>Office:</strong> ${office}</p>
 <p><strong>Office Hours:</strong> ${hours}</p>
-<p style="margin-bottom:0"><strong>Textbook:</strong> ${c.textbook}</p>
+<p><strong>Textbook:</strong> ${c.textbook}</p>
+<p><strong>CRN:</strong> ${c.crn||'TBD'} &nbsp;|&nbsp; <strong>Room:</strong> ${c.room||'TBD'}</p>
+<p><strong>Meeting Days:</strong> ${c.days||'See Canvas'} &nbsp;|&nbsp; <strong>Meeting Times:</strong> ${c.times||'TBD'}</p>
+<p style="margin-bottom:0"><strong>Start Date:</strong> ${c.start||'TBD'} &nbsp;|&nbsp; <strong>End Date:</strong> ${c.end||'TBD'}</p>
 </div>
 <div style="flex:1 1 280px;background:#fff8f1;padding:18px;border:2px solid #f18a20">
 <h3 style="margin-top:0;font-size:1.1rem">Important Reminders</h3>
@@ -2736,6 +2743,7 @@ tr:nth-child(even) td{background:#f9f9f9}
 <p><strong>Textbook:</strong> ${c.textbook}</p>
 <p><strong>CRN:</strong> ${c.crn||'TBD'} &nbsp;|&nbsp; <strong>Room:</strong> ${c.room||'TBD'}</p>
 <p><strong>Days/Times:</strong> ${(c.days&&c.times)?c.days+' '+c.times:(c.days||'See Canvas')}</p>
+<p><strong>Start Date:</strong> ${c.start||'TBD'} &nbsp;|&nbsp; <strong>End Date:</strong> ${c.end||'TBD'}</p>
 </div>
 </div>
 <h2>Course Description</h2>
