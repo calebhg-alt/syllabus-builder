@@ -1800,7 +1800,7 @@ function renderCPSManage() {
                   style="white-space:pre-wrap"
                   oninput="getCPSById('${cps.id}').policies[${pi}][1]=this.value;scheduleSave()"
                   placeholder="Enter each point on its own line:&#10;1. First point&#10;2. Second point"
-                >${txt}</textarea>
+                >${txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
                 <p style="font-size:10px;color:var(--text3);margin:3px 0 0;font-style:italic">Each line becomes a separate paragraph in the syllabus.</p>
               </div>
             </div>
@@ -2148,8 +2148,8 @@ function renderPolicies() {
             rows="5"
             style="white-space:pre;font-family:inherit;line-height:1.6"
             placeholder="Enter each point on its own line:&#10;1. First point&#10;2. Second point&#10;3. Third point"
-          >${txt}</textarea>
-          <p style="font-size:10px;color:var(--text3);margin:4px 0 0;font-style:italic">Each line becomes a separate paragraph. Press Enter to start a new point.</p>
+          >${txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+          <p style="font-size:10px;color:var(--text3);margin:4px 0 0;font-style:italic">Each line becomes a separate paragraph. Blank lines add extra spacing.</p>
         </div>
       </div>
     `).join('');
@@ -2672,10 +2672,21 @@ function formatPolicyText(txt, forPrint) {
   const liStyle  = forPrint ? 'font-size:11px;line-height:1.5;margin:1px 0' : 'margin:2px 0;font-size:.93rem;line-height:1.5';
   const olStyle  = 'margin:0 0 4px;padding-left:1.4em';
 
-  // Split on real newlines first
-  const lines = txt.split('\n').filter(l => l.trim());
+  // Split on real newlines first; blank lines act as paragraph separators
+  // (treat \n\n as a paragraph break — insert spacing between groups)
+  const rawLines = txt.split('\n');
+  // Build an augmented line list: blank lines become a special sentinel
+  const lines = [];
+  for(const l of rawLines) {
+    if(l.trim()) lines.push(l);
+    else if(lines.length && lines[lines.length-1] !== '__BLANK__') lines.push('__BLANK__');
+  }
+  // Strip trailing sentinel
+  while(lines.length && lines[lines.length-1] === '__BLANK__') lines.pop();
 
-  if(lines.length <= 1) {
+  const nonBlankLines = lines.filter(l => l !== '__BLANK__');
+
+  if(nonBlankLines.length <= 1) {
     // Single block — check for inline numbered list (e.g. "intro… 1. Foo 2. Bar 3. Baz")
     const parsed = splitInlineNumberedList(txt);
     if(parsed) {
@@ -2686,14 +2697,16 @@ function formatPolicyText(txt, forPrint) {
       }).join('');
       return `${pre}<ol style="${olStyle}">${items}</ol>`;
     }
-    return `<p style="${pStyle}">${linkifyPolicyText(txt)}</p>`;
+    return `<p style="${pStyle}">${linkifyPolicyText(txt.trim())}</p>`;
   }
 
   // Multiple newline-separated lines — render mixed content properly:
   // consecutive list lines → <ol>/<ul>, non-list lines → <p>
+  // __BLANK__ sentinels add spacing between paragraphs
   const chunks = [];
   let listBuf = [];
   let listType = null;
+  const gapStyle = forPrint ? 'margin:4px 0 0' : 'margin:6px 0 0';
 
   function flushList() {
     if(!listBuf.length) return;
@@ -2708,7 +2721,11 @@ function formatPolicyText(txt, forPrint) {
   }
 
   for(const line of lines) {
-    if(looksLikeListLine(line)) {
+    if(line === '__BLANK__') {
+      flushList();
+      // Add a small spacer paragraph to represent the blank line
+      chunks.push(`<p style="${gapStyle}"></p>`);
+    } else if(looksLikeListLine(line)) {
       const curType = /^\s*\d+[\.\)]/.test(line) ? 'ol' : 'ul';
       if(listType && listType !== curType) flushList();
       listType = curType;
