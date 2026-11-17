@@ -2456,7 +2456,7 @@ ${buildScheduleTableHTML(c,false)}
 <div style="flex:1 1 220px;border-left:6px solid #8db9ca;padding-left:12px"><p style="margin:0"><a style="color:#8b1c40;text-decoration:underline" href="https://www.avc.edu/program/welding-weld" target="_blank" rel="noopener">Welding Program Page</a></p></div>
 <div style="flex:1 1 220px;border-left:6px solid #8b1c40;padding-left:12px"><p style="margin:0"><a style="color:#8b1c40;text-decoration:underline" href="https://www.avc.edu/studentservices/dsps" target="_blank" rel="noopener">Disability Services / DSPS</a></p></div></div></div>
 <div style="margin-top:28px;border-top:2px solid #d1d5db;padding-top:16px">
-<p style="margin:0;font-size:.92rem;color:#4b5563">${c.code} &ndash; ${c.title} | ${sem} | Antelope Valley College | <a style="color:#8b1c40;text-decoration:underline" href="https://www.avc.edu" target="_blank" rel="noopener">avc.edu</a></p>
+<p style="margin:0;font-size:.92rem;color:#4b5563">${c.code} &ndash; ${c.title} | ${sem} | <a style="color:#8b1c40;text-decoration:underline" href="https://www.avc.edu" target="_blank" rel="noopener">Antelope Valley College</a></p>
 <p style="margin:6px 0 0;font-size:.92rem;color:#4b5563">This syllabus is subject to change. All students will be notified of the changes.</p>
 </div></div>`;
 }
@@ -2665,27 +2665,42 @@ function formatPolicyText(txt, forPrint) {
     return `<p style="${pStyle}">${linkifyPolicyText(txt)}</p>`;
   }
 
-  // Multiple newline-separated lines — check if most are list items
-  const markerLines = lines.filter(looksLikeListLine);
-  if(markerLines.length >= Math.ceil(lines.length * 0.6)) {
-    const isOrdered = /^\s*\d+[\.\)]/.test(markerLines[0]);
-    const tag = isOrdered ? 'ol' : 'ul';
-    const items = lines.map(line => {
+  // Multiple newline-separated lines — render mixed content properly:
+  // consecutive list lines → <ol>/<ul>, non-list lines → <p>
+  const chunks = [];
+  let listBuf = [];
+  let listType = null;
+
+  function flushList() {
+    if(!listBuf.length) return;
+    const tag = listType;
+    const items = listBuf.map(line => {
       const stripped = line.replace(/^\s*(\d+[\.\)]|[a-zA-Z][\.\)]|[-•*])\s+/, '').trim();
       return `<li style="${liStyle}">${linkifyPolicyText(stripped)}</li>`;
     }).join('');
-    return `<${tag} style="${olStyle}">${items}</${tag}>`;
+    chunks.push(`<${tag} style="${olStyle}">${items}</${tag}>`);
+    listBuf = [];
+    listType = null;
   }
 
-  // Multiple non-list lines — each as its own paragraph
-  return lines.map(line => {
-    const isSub = /^[\s]*[a-z][\.\)]|^[\s]*[ivxIVX]+[\.\)]|^\s+/.test(line);
-    const indent = isSub ? 'padding-left:14px;' : '';
-    const s = forPrint
-      ? `font-size:11px;line-height:1.5;margin:1px 0;${indent}`
-      : `margin:2px 0;font-size:.93rem;line-height:1.5;${indent}`;
-    return `<p style="${s}">${linkifyPolicyText(line.trim())}</p>`;
-  }).join('');
+  for(const line of lines) {
+    if(looksLikeListLine(line)) {
+      const curType = /^\s*\d+[\.\)]/.test(line) ? 'ol' : 'ul';
+      if(listType && listType !== curType) flushList();
+      listType = curType;
+      listBuf.push(line);
+    } else {
+      flushList();
+      const isSub = /^[\s]*[a-z][\.\)]|^[\s]*[ivxIVX]+[\.\)]|^\s+/.test(line);
+      const indent = isSub ? 'padding-left:14px;' : '';
+      const s = forPrint
+        ? `font-size:11px;line-height:1.5;margin:1px 0;${indent}`
+        : `margin:2px 0;font-size:.93rem;line-height:1.5;${indent}`;
+      chunks.push(`<p style="${s}">${linkifyPolicyText(line.trim())}</p>`);
+    }
+  }
+  flushList();
+  return chunks.join('');
 }
 
 function getPoliciesHTML(forPrint) {
@@ -2872,7 +2887,7 @@ ${c.ackurl?`<div style="background:#fcf7f9;padding:22px;margin-bottom:18px;borde
 <a href="${c.ackurl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;padding:12px 28px;background:#8b1c40;color:#ffffff;font-weight:bold;text-decoration:none;border-radius:4px">Syllabus Acknowledgement</a>
 </div>`:''}
 <div style="margin-top:28px;border-top:2px solid #d1d5db;padding-top:16px">
-<p style="margin:0;font-size:.92rem;color:#4b5563">${c.code} — ${sem} | Antelope Valley College | <a href="https://www.avc.edu" style="color:#8b1c40">avc.edu</a></p>
+<p style="margin:0;font-size:.92rem;color:#4b5563">${c.code} — ${sem} | <a href="https://www.avc.edu" style="color:#8b1c40">Antelope Valley College</a></p>
 <p style="margin:6px 0 0;font-size:.92rem;color:#4b5563">This syllabus is subject to change. All students will be notified of the changes.</p>
 </div></div>`;
 }
