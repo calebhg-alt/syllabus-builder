@@ -2881,11 +2881,11 @@ ${buildScheduleTableHTML(c,false)}
 </div>
 ${getCustomPoliciesHTML(c,false)}
 ${getPoliciesHTML(false)}
-${c.ackurl?`<div style="background:#fcf7f9;padding:22px;margin-bottom:18px;border:2px solid #8b1c40;text-align:center">
-<h2 style="margin-top:0;color:#1f2937">Syllabus Acknowledgement</h2>
+<div style="background:#fcf7f9;padding:22px;margin-bottom:18px;border:2px solid #8b1c40;text-align:center">
+<h2 style="margin-top:0;color:#1f2937">Syllabus Agreement</h2>
 <p>By clicking below, you confirm that you have read and understood this syllabus, including all course policies.</p>
-<a href="${c.ackurl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;padding:12px 28px;background:#8b1c40;color:#ffffff;font-weight:bold;text-decoration:none;border-radius:4px">Syllabus Acknowledgement</a>
-</div>`:''}
+<a href="${c.ackurl||'#'}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;padding:12px 28px;background:#8b1c40;color:#ffffff;font-weight:bold;text-decoration:none;border-radius:4px">Syllabus Agreement</a>
+</div>
 <div style="margin-top:28px;border-top:2px solid #d1d5db;padding-top:16px">
 <p style="margin:0;font-size:.92rem;color:#4b5563">${c.code} — ${sem} | <a href="https://www.avc.edu" style="color:#8b1c40">Antelope Valley College</a></p>
 <p style="margin:6px 0 0;font-size:.92rem;color:#4b5563">This syllabus is subject to change. All students will be notified of the changes.</p>
@@ -2966,11 +2966,11 @@ ${getToolListHTML(c,true)}
 ${buildScheduleTableHTML(c,true)}
 ${getCustomPoliciesHTML(c,true)}
 ${getPoliciesHTML(true)}
-${c.ackurl?`<div class="box box-burg" style="text-align:center;padding:16px;margin-bottom:12px">
-<h3 style="margin-top:0">Syllabus Acknowledgement</h3>
+<div class="box box-burg" style="text-align:center;padding:16px;margin-bottom:12px">
+<h3 style="margin-top:0">Syllabus Agreement</h3>
 <p>By clicking below, you confirm that you have read and understood this syllabus, including all course policies.</p>
-<a href="${c.ackurl}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:10px 24px;background:#8b1c40;color:#ffffff;font-weight:bold;text-decoration:none;border-radius:4px">Syllabus Acknowledgement</a>
-</div>`:''}
+<a href="${c.ackurl||'#'}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;padding:10px 24px;background:#8b1c40;color:#ffffff;font-weight:bold;text-decoration:none;border-radius:4px">Syllabus Agreement</a>
+</div>
 <div class="footer">
 <p>${c.code} — ${c.title} | ${sem} | Antelope Valley College | This syllabus is subject to change. All students will be notified of the changes.</p>
 </div>
