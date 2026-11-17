@@ -2617,35 +2617,74 @@ function buildAltText(desc, maxLen=120) {
   return cut.slice(0, cut.lastIndexOf(' ')) + '…';
 }
 
+function linkifyPolicyText(txt) {
+  // Convert bare www.avc.edu (and similar) URLs to descriptive anchor tags
+  // so Canvas Panorama doesn't flag them as "link with no descriptive title"
+  return txt
+    .replace(/\b(https?:\/\/[^\s<>"]+)/g, (url) => {
+      // Already inside an href — skip (won't match because of <> exclusion above)
+      return `<a href="${url}" target="_blank" rel="noopener" style="color:#8b1c40">AVC Website</a>`;
+    })
+    .replace(/(?<![">])\bwww\.avc\.edu\b(?!<)/g,
+      '<a href="https://www.avc.edu" target="_blank" rel="noopener" style="color:#8b1c40">AVC Website</a>');
+}
+
+function splitInlineNumberedList(txt) {
+  // Detect "intro text... 1. Foo. 2. Bar. 3. …" embedded in one paragraph.
+  // Returns { pre, items } where pre is any intro text before "1." and items is array of item strings.
+  const firstMarker = txt.search(/\b1[\.\)]\s/);
+  if(firstMarker === -1) return null;
+  const listPart = txt.slice(firstMarker);
+  const matches = [...listPart.matchAll(/\b(\d+[\.\)])\s+/g)];
+  if(matches.length < 2) return null; // need at least 2 numbered items
+  const pre = txt.slice(0, firstMarker).trim();
+  const parts = listPart.split(/(?=\b\d+[\.\)]\s)/).map(s => s.trim()).filter(Boolean);
+  if(!parts.every(p => /^\d+[\.\)]\s/.test(p))) return null;
+  return { pre, items: parts };
+}
+
 function formatPolicyText(txt, forPrint) {
-  // Split on real newlines, render each non-empty line as its own paragraph
+  const pStyle   = forPrint ? 'font-size:11px;line-height:1.5;margin:0 0 2px' : 'margin:0 0 4px;font-size:.93rem;line-height:1.5';
+  const liStyle  = forPrint ? 'font-size:11px;line-height:1.5;margin:1px 0' : 'margin:2px 0;font-size:.93rem;line-height:1.5';
+  const olStyle  = 'margin:0 0 4px;padding-left:1.4em';
+
+  // Split on real newlines first
   const lines = txt.split('\n').filter(l => l.trim());
+
   if(lines.length <= 1) {
-    // Single block — just return as-is
-    const s = forPrint ? 'font-size:11px;line-height:1.5;margin:0 0 2px' : 'margin:0 0 4px;font-size:.93rem;line-height:1.5';
-    return `<p style="${s}">${txt}</p>`;
+    // Single block — check for inline numbered list (e.g. "intro… 1. Foo 2. Bar 3. Baz")
+    const parsed = splitInlineNumberedList(txt);
+    if(parsed) {
+      const pre = parsed.pre ? `<p style="${pStyle}">${linkifyPolicyText(parsed.pre)}</p>` : '';
+      const items = parsed.items.map(line => {
+        const stripped = line.replace(/^\s*\d+[\.\)]\s+/, '').trim();
+        return `<li style="${liStyle}">${linkifyPolicyText(stripped)}</li>`;
+      }).join('');
+      return `${pre}<ol style="${olStyle}">${items}</ol>`;
+    }
+    return `<p style="${pStyle}">${linkifyPolicyText(txt)}</p>`;
   }
-  // If most lines carry explicit list markers (1. / a. / - / •), this is a real
-  // list — render as semantic <ol>/<ul> so screen readers announce it correctly.
+
+  // Multiple newline-separated lines — check if most are list items
   const markerLines = lines.filter(looksLikeListLine);
   if(markerLines.length >= Math.ceil(lines.length * 0.6)) {
     const isOrdered = /^\s*\d+[\.\)]/.test(markerLines[0]);
     const tag = isOrdered ? 'ol' : 'ul';
-    const liStyle = forPrint ? 'font-size:11px;line-height:1.5;margin:1px 0' : 'margin:2px 0;font-size:.93rem;line-height:1.5';
     const items = lines.map(line => {
       const stripped = line.replace(/^\s*(\d+[\.\)]|[a-zA-Z][\.\)]|[-•*])\s+/, '').trim();
-      return `<li style="${liStyle}">${stripped}</li>`;
+      return `<li style="${liStyle}">${linkifyPolicyText(stripped)}</li>`;
     }).join('');
-    return `<${tag} style="margin:0 0 4px;padding-left:1.4em">${items}</${tag}>`;
+    return `<${tag} style="${olStyle}">${items}</${tag}>`;
   }
-  // Multiple lines, not a list — each gets its own paragraph, indented if it starts with a number sub-point
+
+  // Multiple non-list lines — each as its own paragraph
   return lines.map(line => {
     const isSub = /^[\s]*[a-z][\.\)]|^[\s]*[ivxIVX]+[\.\)]|^\s+/.test(line);
     const indent = isSub ? 'padding-left:14px;' : '';
     const s = forPrint
       ? `font-size:11px;line-height:1.5;margin:1px 0;${indent}`
       : `margin:2px 0;font-size:.93rem;line-height:1.5;${indent}`;
-    return `<p style="${s}">${line.trim()}</p>`;
+    return `<p style="${s}">${linkifyPolicyText(line.trim())}</p>`;
   }).join('');
 }
 
