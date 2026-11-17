@@ -999,16 +999,12 @@ html.light .instructor-info strong{color:var(--text)}
             <button class="export-mode-tab active" id="syl-tab-canvas" onclick="setSylMode('canvas')">Canvas HTML</button>
             <button class="export-mode-tab" id="syl-tab-print" onclick="setSylMode('print')">Print-Friendly</button>
           </div>
-          <div class="flex-gap" style="margin-bottom:12px">
+          <div class="flex-gap" style="margin-bottom:12px;align-items:center">
             <button class="btn btn-primary" id="syl-copy-btn" onclick="copySyllabusHTML()">Copy HTML</button>
-            <button class="btn" id="syl-copy-p1-btn" style="display:none" onclick="copySyllabusPage(1)">Copy Page 1 HTML</button>
-            <button class="btn" id="syl-copy-p2-btn" style="display:none" onclick="copySyllabusPage(2)">Copy Page 2 HTML</button>
             <button class="btn" onclick="toggleSyllabusPreview()">Toggle Preview</button>
             <button class="btn" id="syl-print-btn" style="display:none" onclick="printSyllabus()">🖨 Open Print View</button>
+            <span id="syl-word-badge" style="display:none;font-size:11px;padding:3px 8px;border-radius:12px;background:var(--warning-bg,#fff8e1);border:1px solid #f9a825;color:var(--text)"></span>
             <span id="syl-copy-status" style="font-size:12px;color:var(--green-txt)"></span>
-          </div>
-          <div id="syl-split-warning" style="display:none;padding:8px 12px;margin-bottom:10px;background:var(--warning-bg,#fff8e1);border-left:4px solid #f9a825;border-radius:4px;font-size:13px;color:var(--text)">
-            ⚠️ <strong>Canvas Accessibility:</strong> This syllabus exceeds 3,000 words (<span id="syl-word-count"></span> words). Canvas will score this page at 99% instead of 100%. Use <em>Copy Page 1</em> and <em>Copy Page 2</em> to split into two Canvas pages.
           </div>
           <div id="syl-preview-wrap" style="display:none;margin-bottom:12px">
             <div class="preview-frame">
@@ -1679,6 +1675,14 @@ function openCourseEdit(id) {
         </div>
 
         <div id="ctab-sched-${id}" style="display:none">
+          <div class="flex-gap" style="align-items:center;margin-bottom:12px;gap:10px">
+            <span class="field-label" style="margin:0;white-space:nowrap">Weeks / Meetings</span>
+            <input type="number" min="1" max="52" value="${c.schedule.length}"
+              id="week-count-${id}"
+              style="width:70px;padding:4px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px"
+              oninput="setWeekCount('${id}',this.value)">
+            <span style="font-size:12px;color:var(--text3)">${c.schedule.length} row${c.schedule.length===1?'':'s'} — edit to add or remove weeks</span>
+          </div>
           <div class="col-manager" id="col-manager-${id}">
             <div class="col-manager-title">Column Layout</div>
             <div id="col-rows-${id}">
@@ -1956,13 +1960,38 @@ function addWeek(id) {
   const c=COURSES.find(x=>x.id===id);
   if(!c) return;
   const n=c.schedule.length+1;
-  c.schedule.push({wk:n,dates:`Week ${n}`,c:c.numGroups===2?['','','','']:['','']});
+  c.schedule.push({wk:n,dates:`Week ${n}`,c:Array(c.groupLabels.length).fill('')});
+  scheduleSave();
   openCourseEdit(id); showCTab(id,'sched');
 }
 function removeLastWeek(id) {
   const c=COURSES.find(x=>x.id===id);
   if(!c||c.schedule.length<=1) return;
   c.schedule.pop();
+  scheduleSave();
+  openCourseEdit(id); showCTab(id,'sched');
+}
+
+function setWeekCount(id, rawVal) {
+  const c = COURSES.find(x=>x.id===id);
+  if(!c) return;
+  const target = Math.max(1, Math.min(52, parseInt(rawVal)||1));
+  const cur = c.schedule.length;
+  if(target === cur) return;
+  if(target > cur) {
+    // Add rows
+    for(let i = cur; i < target; i++) {
+      const n = i + 1;
+      const label = target === 1 ? 'Class Date' : `Week ${n}`;
+      c.schedule.push({wk:n, dates:label, c:Array(c.groupLabels.length).fill('')});
+    }
+  } else {
+    // Remove from end
+    c.schedule.splice(target);
+    // Re-number remaining rows
+    c.schedule.forEach((row,i)=>{ row.wk = i+1; });
+  }
+  scheduleSave();
   openCourseEdit(id); showCTab(id,'sched');
 }
 
@@ -2348,11 +2377,16 @@ function copyHomepageHTML() {
   const c = COURSES.find(x=>x.id===id);
   if(!c) return;
   const html = buildHomepageHTML(c);
-  navigator.clipboard.writeText(html).then(()=>{
-    const s = document.getElementById('copy-status');
-    s.textContent = '✅ Copied to clipboard';
-    setTimeout(()=>s.textContent='',3000);
-  });
+  const ta = document.createElement('textarea');
+  ta.value = html;
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  const ok = document.execCommand('copy');
+  document.body.removeChild(ta);
+  const s = document.getElementById('copy-status');
+  s.textContent = ok ? '✅ Copied to clipboard' : '⚠️ Copy failed — select the code manually';
+  setTimeout(()=>s.textContent='',ok?3000:5000);
 }
 
 function getInstructorVal(id){return (document.getElementById(id)||{}).value||'';}
@@ -2459,23 +2493,30 @@ function countWords(html) {
   return text ? text.split(' ').length : 0;
 }
 
-function splitSyllabusCanvasHTML(c) {
-  // Page 1: everything up to (not including) custom policies
-  // Page 2: custom policies + general policies + acknowledgement
-  const full = buildSyllabusCanvasHTML(c);
-  // Find split marker — the custom policies section starts after the schedule table
-  const splitMarker = '<!-- SPLIT_PAGE_2 -->';
-  const idx = full.indexOf(splitMarker);
-  if(idx === -1) {
-    // Fallback: split roughly in half by finding a </table> near the midpoint
-    const mid = Math.floor(full.length / 2);
-    const tableEnd = full.lastIndexOf('</table>', mid + full.length/4);
-    const cut = tableEnd !== -1 ? tableEnd + 8 : mid;
-    return [full.slice(0, cut) + '\n</body></html>', full.slice(cut)];
+function copyToClipboard(text, statusMsg) {
+  // Robust copy that works with file:// URLs (no HTTPS required)
+  const s = document.getElementById('syl-copy-status');
+  try {
+    // Modern async API (works on HTTPS)
+    navigator.clipboard.writeText(text).then(()=>{
+      if(s){ s.textContent = statusMsg; setTimeout(()=>s.textContent='',3000); }
+    }).catch(()=> fallbackCopy(text, statusMsg));
+  } catch(e) {
+    fallbackCopy(text, statusMsg);
   }
-  const p1 = full.slice(0, idx) + '\n</body></html>';
-  const p2 = full.slice(idx + splitMarker.length);
-  return [p1, p2];
+}
+
+function fallbackCopy(text, statusMsg) {
+  // textarea select trick — works everywhere including file://
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  const ok = document.execCommand('copy');
+  document.body.removeChild(ta);
+  const s = document.getElementById('syl-copy-status');
+  if(s){ s.textContent = ok ? statusMsg : '⚠️ Copy failed — select the code manually'; setTimeout(()=>s.textContent='',4000); }
 }
 
 function updateSyllabusPreview() {
@@ -2484,8 +2525,8 @@ function updateSyllabusPreview() {
   if(!c) {
     const pre = document.getElementById('syl-code-preview');
     if(pre) pre.textContent = 'Select a course above to generate the syllabus.';
-    // Reset split UI
-    setSplitUI(false, 0);
+    const badge = document.getElementById('syl-word-badge');
+    if(badge) badge.style.display = 'none';
     return;
   }
   const html = sylMode==='print' ? buildSyllabusPrintHTML(c) : buildSyllabusCanvasHTML(c);
@@ -2495,26 +2536,20 @@ function updateSyllabusPreview() {
   if(iframe && document.getElementById('syl-preview-wrap').style.display!=='none') iframe.srcdoc = html;
   const ackStatus = document.getElementById('syl-ack-status');
   if(ackStatus) ackStatus.textContent = '';
-  // Word count / split check (Canvas mode only)
-  if(sylMode !== 'print') {
-    const wc = countWords(html);
-    setSplitUI(wc >= 3000, wc);
-  } else {
-    setSplitUI(false, 0);
+  // Word count badge (Canvas mode only)
+  const badge = document.getElementById('syl-word-badge');
+  if(badge) {
+    if(sylMode !== 'print') {
+      const wc = countWords(html);
+      badge.style.display = '';
+      badge.textContent = `${wc.toLocaleString()} words${wc >= 3000 ? ' ⚠️ 99%' : ' ✓ 100%'}`;
+      badge.title = wc >= 3000
+        ? `Canvas accessibility: ${wc.toLocaleString()} words exceeds 3,000 — Canvas will score this page at 99%.`
+        : `Canvas accessibility: under 3,000 words — 100% score.`;
+    } else {
+      badge.style.display = 'none';
+    }
   }
-}
-
-function setSplitUI(isSplit, wordCount) {
-  const copyBtn = document.getElementById('syl-copy-btn');
-  const p1Btn   = document.getElementById('syl-copy-p1-btn');
-  const p2Btn   = document.getElementById('syl-copy-p2-btn');
-  const warn    = document.getElementById('syl-split-warning');
-  const wc      = document.getElementById('syl-word-count');
-  if(copyBtn) copyBtn.style.display = isSplit ? 'none' : '';
-  if(p1Btn)   p1Btn.style.display   = isSplit ? '' : 'none';
-  if(p2Btn)   p2Btn.style.display   = isSplit ? '' : 'none';
-  if(warn)    warn.style.display    = isSplit ? '' : 'none';
-  if(wc)      wc.textContent        = wordCount.toLocaleString();
 }
 
 function openAckURL() {
@@ -2539,24 +2574,7 @@ function copySyllabusHTML() {
   const c = id ? COURSES.find(x=>x.id===id) : null;
   if(!c) return;
   const html = sylMode==='print' ? buildSyllabusPrintHTML(c) : buildSyllabusCanvasHTML(c);
-  navigator.clipboard.writeText(html).then(()=>{
-    const s = document.getElementById('syl-copy-status');
-    s.textContent = '✅ Copied!';
-    setTimeout(()=>s.textContent='',3000);
-  });
-}
-
-function copySyllabusPage(pageNum) {
-  const id = document.getElementById('syl_course')?.value;
-  const c = id ? COURSES.find(x=>x.id===id) : null;
-  if(!c) return;
-  const pages = splitSyllabusCanvasHTML(c);
-  const html = pages[pageNum - 1] || '';
-  navigator.clipboard.writeText(html).then(()=>{
-    const s = document.getElementById('syl-copy-status');
-    s.textContent = `✅ Page ${pageNum} copied!`;
-    setTimeout(()=>s.textContent='',3000);
-  });
+  copyToClipboard(html, '✅ Copied!');
 }
 
 function printSyllabus() {
@@ -2807,7 +2825,6 @@ ${getToolListHTML(c,false)}
 <h2 style="margin-top:0;color:#1f2937">Course Schedule / Due Dates</h2>
 ${buildScheduleTableHTML(c,false)}
 </div>
-<!-- SPLIT_PAGE_2 -->
 ${getCustomPoliciesHTML(c,false)}
 ${getPoliciesHTML(false)}
 ${c.ackurl?`<div style="background:#fcf7f9;padding:22px;margin-bottom:18px;border:2px solid #8b1c40;text-align:center">
