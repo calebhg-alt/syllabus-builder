@@ -1413,14 +1413,6 @@ let POLICIES = [
   ['SAFETY TRAINING (MILLER OPENBOOK)','Each student must complete mandatory safety training through Miller OpenBook at the beginning of every semester. Students are prohibited from lab activities until they complete the ANSI Z49.1 Safety Exam in Canvas.'],
 ];
 
-// Pass/No Pass policy overrides — replaces GRADING and DISAGREEMENT WITH GRADES for WELD 900/901
-const PASS_FAIL_POLICIES = [
-  ['GRADING','Weld 900 is a "Pass/No Pass" class. To receive a "Pass," students must achieve an overall combined score of 70% or higher on all graded assignments, homework, quizzes, projects, and finals.\nSubmitting all assigned work and passing class quizzes, tests, and exams are essential for the successful completion of this course.\nMissed exams and assignments are generally not eligible for make-up opportunities except where required by approved accommodations, applicable law, or official AVC policy.\nAny final administered during this class is required for course completion. Failure to complete the final exam may result in a "No Pass" for the class unless otherwise addressed through approved accommodations or applicable college policy. Finals are generally not eligible for make-up opportunities except where required by approved accommodations, applicable law, or official AVC policy.'],
-  ['DISAGREEMENT WITH GRADES','In an effort to support a fair and professional process for addressing grading concerns. Students who believe an assignment, exam, or project has been graded in error must submit a written request via email within 10 instructional days, clearly identifying the specific grading criterion in question and referencing the applicable rubric or instructions; requests based on effort, attendance, comparison to other students, or personal circumstances will not be considered. The instructor will review the request and provide a written response, and grades may remain the same, be increased, or be decreased if an error is identified; the instructor\'s academic judgment is final at this stage. If the matter cannot be resolved informally, students may pursue the formal grade appeal process as outlined in Antelope Valley College policy and the College Catalog, noting that formal appeals are limited to claims of mistake, fraud, bad faith, or incompetence, not disagreement with academic standards, and all discussions regarding grades must remain respectful and professional in accordance with AVC policy.'],
-  ['DUE DATES','All projects, exams, homework, tests, graded and non-graded assignments are due on the dates discussed in class or listed in Canvas.'],
-];
-// Policy titles overridden by Pass/Fail mode (these are skipped from the standard POLICIES list)
-const PASS_FAIL_OVERRIDES = new Set(['GRADING','DISAGREEMENT WITH GRADES']);
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────
 const ALL_PANELS = ['instructor','grading','policies','cps-manage','courses','course-edit','tool-view','tools-manage','import','homepage','syllabus','export'];
@@ -1818,6 +1810,22 @@ function renderCPSManage() {
       </div>
     </div>
   `).join('');
+}
+
+const PASS_FAIL_CPS_ID = 'cps_passfail_900';
+
+function ensurePassFailCPS() {
+  if(CUSTOM_POLICY_SETS.find(s => s.id === PASS_FAIL_CPS_ID)) return; // already exists
+  CUSTOM_POLICY_SETS.unshift({
+    id: PASS_FAIL_CPS_ID,
+    name: 'WELD 900/901 — Pass/No Pass',
+    policies: [
+      ['GRADING', 'Weld 900 is a "Pass/No Pass" class. To receive a "Pass," students must achieve an overall combined score of 70% or higher on all graded assignments, homework, quizzes, projects, and finals.\nSubmitting all assigned work and passing class quizzes, tests, and exams are essential for the successful completion of this course.\nMissed exams and assignments are generally not eligible for make-up opportunities except where required by approved accommodations, applicable law, or official AVC policy.\nAny final administered during this class is required for course completion. Failure to complete the final exam may result in a "No Pass" for the class unless otherwise addressed through approved accommodations or applicable college policy. Finals are generally not eligible for make-up opportunities except where required by approved accommodations, applicable law, or official AVC policy.\nPassing this course does not indicate that a student has successfully completed the LADBS performance examination or any external certification or licensure requirement.'],
+      ['DISAGREEMENT WITH GRADES', 'In an effort to support a fair and professional process for addressing grading concerns. Students who believe an assignment, exam, or project has been graded in error must submit a written request via email within 10 instructional days, clearly identifying the specific grading criterion in question and referencing the applicable rubric or instructions; requests based on effort, attendance, comparison to other students, or personal circumstances will not be considered. The instructor will review the request and provide a written response, and grades may remain the same, be increased, or be decreased if an error is identified; the instructor\'s academic judgment is final at this stage. If the matter cannot be resolved informally, students may pursue the formal grade appeal process as outlined in Antelope Valley College policy and the College Catalog, noting that formal appeals are limited to claims of mistake, fraud, bad faith, or incompetence, not disagreement with academic standards, and all discussions regarding grades must remain respectful and professional in accordance with AVC policy.'],
+      ['DUE DATES', 'All projects, exams, homework, tests, graded and non-graded assignments are due on the dates discussed in class or listed in Canvas.'],
+    ]
+  });
+  scheduleSave();
 }
 
 function addCPS() {
@@ -2727,9 +2735,11 @@ function getPoliciesHTML(forPrint, c) {
     ? 'font-size:13px;font-weight:700;color:#8b1c40;margin:0 0 5px'
     : 'margin-top:0;color:#1f2937;font-size:1rem';
   const pf = c && c.passFail;
-  // Build policy list: if pass/fail, inject override policies first, then standard policies minus overridden titles
+  // Build policy list: if pass/fail, pull from the editable WELD 900/901 CPS, then standard policies minus overridden titles
+  const pfPolicies = pf ? (CUSTOM_POLICY_SETS.find(s => s.id === PASS_FAIL_CPS_ID) || {policies:[]}).policies : [];
+  const pfTitles = new Set(pfPolicies.map(([t]) => t));
   const activePolicies = pf
-    ? [...PASS_FAIL_POLICIES, ...POLICIES.filter(([t]) => !PASS_FAIL_OVERRIDES.has(t))]
+    ? [...pfPolicies, ...POLICIES.filter(([t]) => !pfTitles.has(t))]
     : POLICIES;
   return activePolicies.map(([t,txt])=>`
     <div style="${style}">
@@ -3450,6 +3460,7 @@ async function unlockDept(dept) {
   if(lockErr) lockErr.textContent = 'Loading data…';
   // Load from Firebase (async)
   const savedAt = await loadDeptData(dept);
+  ensurePassFailCPS();
   // Hide lock screen
   const ls = document.getElementById('lock-screen');
   if(ls) { ls.style.opacity='0'; ls.style.transition='opacity .3s'; setTimeout(()=>ls.style.display='none',300); }
